@@ -21,7 +21,7 @@ jobs:
 
       - name: Recreate Android folder (fix gradle issue)
         run: |
-          flutter create --platforms=android .
+          flutter create --platforms=android --project-name visora_ai_flutter .
           echo "✅ Android folder recreated successfully!"
 
       - name: Flutter pub get
