@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../services/api_service.dart';
-import 'create_video_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -10,83 +8,61 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-  bool loading = false;
+  final _email = TextEditingController();
+  final _pwd = TextEditingController();
+  bool _loading = false;
+  String? _error;
 
-  Future<void> loginUser() async {
-    setState(() => loading = true);
+  void _doLogin() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
-      final res = await ApiService.login(
-        emailController.text.trim(),
-        passwordController.text.trim(),
-      );
-      if (res['success'] == true) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const CreateVideoScreen()),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(res['message'] ?? 'Login failed')),
-        );
-      }
+      final token = await ApiService.login(_email.text.trim(), _pwd.text.trim());
+      Navigator.pushReplacementNamed(context, '/home', arguments: token);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      setState(() => _error = e.toString());
     } finally {
-      setState(() => loading = false);
+      setState(() => _loading = false);
     }
+  }
+
+  @override
+  void dispose() {
+    _email.dispose();
+    _pwd.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text('Visora – Ultimate AI Studio',
-                  style: GoogleFonts.poppins(
-                      fontSize: 22, color: Colors.white, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 40),
-              TextField(
-                controller: emailController,
-                decoration: const InputDecoration(
-                  hintText: "Email",
-                  filled: true,
-                  fillColor: Colors.white10,
-                  border: OutlineInputBorder(),
-                ),
-                style: const TextStyle(color: Colors.white),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  hintText: "Password",
-                  filled: true,
-                  fillColor: Colors.white10,
-                  border: OutlineInputBorder(),
-                ),
-                style: const TextStyle(color: Colors.white),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: loading ? null : loginUser,
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.purpleAccent,
-                    padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 14)),
-                child: loading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text("Login", style: TextStyle(fontSize: 18)),
-              ),
-            ],
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 40),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Visora – Ultimate AI Studio',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 24),
+                TextField(controller: _email, decoration: const InputDecoration(hintText: 'Email')),
+                const SizedBox(height: 12),
+                TextField(controller: _pwd, decoration: const InputDecoration(hintText: 'Password'), obscureText: true),
+                const SizedBox(height: 20),
+                if (_error != null) Text(_error!, style: const TextStyle(color: Colors.red)),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: _loading ? null : _doLogin,
+                  style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 14),
+                      backgroundColor: Colors.purpleAccent),
+                  child: _loading ? const CircularProgressIndicator() : const Text('Login'),
+                )
+              ],
+            ),
           ),
         ),
       ),

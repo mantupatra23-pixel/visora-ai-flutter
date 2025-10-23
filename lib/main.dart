@@ -1,26 +1,26 @@
 import 'package:flutter/material.dart';
 import 'screens/login_screen.dart';
+import 'screens/home_screen.dart';
 
 void main() {
-  runApp(const VisoraAIApp());
+  runApp(const VisoraApp());
 }
 
-class VisoraAIApp extends StatelessWidget {
-  const VisoraAIApp({super.key});
+class VisoraApp extends StatelessWidget {
+  const VisoraApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Visora AI',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: Colors.black,
-        colorScheme: const ColorScheme.dark(
-          primary: Colors.purpleAccent,
-          secondary: Colors.deepPurpleAccent,
-        ),
+      title: 'Visora - Ultimate AI Studio',
+      theme: ThemeData(
+        primarySwatch: Colors.purple,
+        scaffoldBackgroundColor: Colors.white,
       ),
-      home: const LoginScreen(),
+      routes: {
+        '/': (ctx) => const LoginScreen(),
+        '/home': (ctx) => const HomeScreen(),
+      },
     );
   }
 }

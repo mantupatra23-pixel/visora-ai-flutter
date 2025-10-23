@@ -1,73 +1,70 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:mime/mime.dart';
+import 'package:http_parser/http_parser.dart';
 
 class ApiService {
-  static const String baseUrl = "https://visora-ai-5nqs.onrender.com/api";
+  static const String baseUrl = 'https://visora-ai-5nqs.onrender.com';
 
-  static Map<String, String> get headers => {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      };
-
-  static Future<Map<String, dynamic>> login(String email, String password) async {
-    final url = Uri.parse('$baseUrl/login');
-    final response = await http.post(
-      url,
-      headers: headers,
-      body: jsonEncode({'email': email, 'password': password}),
-    );
-    return _handleResponse(response);
+  static Future<String> login(String email, String password) async {
+    final uri = Uri.parse('$baseUrl/auth/login');
+    final res = await http.post(uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'password': password}));
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+      return data['token'] ?? '';
+    } else {
+      throw Exception('Login failed: ${res.statusCode}');
+    }
   }
 
-  static Future<Map<String, dynamic>> getProfile(String token) async {
-    final url = Uri.parse('$baseUrl/profile');
-    final response = await http.get(url, headers: {
-      ...headers,
-      'Authorization': 'Bearer $token',
-    });
-    return _handleResponse(response);
+  static Future<Map<String, dynamic>> uploadFile(File file, String token) async {
+    final uri = Uri.parse('$baseUrl/upload');
+    final request = http.MultipartRequest('POST', uri);
+    request.headers['Authorization'] = 'Bearer $token';
+    final mimeType = lookupMimeType(file.path) ?? 'application/octet-stream';
+    request.files.add(await http.MultipartFile.fromPath(
+      'file',
+      file.path,
+      contentType: MediaType.parse(mimeType),
+    ));
+    final streamed = await request.send();
+    final res = await http.Response.fromStream(streamed);
+    if (res.statusCode == 200 || res.statusCode == 201) {
+      return jsonDecode(res.body) as Map<String, dynamic>;
+    } else {
+      throw Exception('Upload failed: ${res.statusCode}');
+    }
   }
 
-  static Future<Map<String, dynamic>> createVideoJob({
+  static Future<Map<String, dynamic>> createJob({
+    required String token,
     required String title,
     required String script,
+    List<String>? assetUrls,
+    String? language,
+    String quality = '1080p',
   }) async {
-    final url = Uri.parse('$baseUrl/create-job');
-    final response = await http.post(
-      url,
-      headers: headers,
-      body: jsonEncode({'title': title, 'script': script}),
-    );
-    return _handleResponse(response);
-  }
-
-  static Future<Map<String, dynamic>> getJobStatus(String jobId) async {
-    final url = Uri.parse('$baseUrl/job-status/$jobId');
-    final response = await http.get(url, headers: headers);
-    return _handleResponse(response);
-  }
-
-  static Future<Map<String, dynamic>> getTemplates() async {
-    final url = Uri.parse('$baseUrl/templates');
-    final response = await http.get(url, headers: headers);
-    return _handleResponse(response);
-  }
-
-  static Future<Map<String, dynamic>> getAdminDashboard() async {
-    final url = Uri.parse('$baseUrl/admin/dashboard');
-    final response = await http.get(url, headers: headers);
-    return _handleResponse(response);
-  }
-
-  static Future<void> clearToken() async {
-    print("✅ Token cleared successfully (local only).");
-  }
-
-  static Map<String, dynamic> _handleResponse(http.Response response) {
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return jsonDecode(response.body);
+    final uri = Uri.parse('$baseUrl/create-job');
+    final body = {
+      'title': title,
+      'script': script,
+      'assets': assetUrls ?? [],
+      'language': language ?? 'hi',
+      'quality': quality,
+    };
+    final res = await http.post(uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(body));
+    if (res.statusCode == 200 || res.statusCode == 201) {
+      return jsonDecode(res.body) as Map<String, dynamic>;
     } else {
-      throw Exception("❌ API Error [${response.statusCode}]: ${response.body}");
+      throw Exception('Create job failed: ${res.statusCode}');
     }
   }
 }
