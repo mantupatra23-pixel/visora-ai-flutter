@@ -19,6 +19,11 @@ jobs:
         with:
           flutter-version: "3.19.6"
 
+      - name: Recreate Android folder (fix gradle issue)
+        run: |
+          flutter create --platforms=android .
+          echo "✅ Android folder recreated successfully!"
+
       - name: Flutter pub get
         run: flutter pub get
 
