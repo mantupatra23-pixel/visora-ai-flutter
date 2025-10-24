@@ -22,22 +22,9 @@ allprojects {
 
 rootProject.buildDir = '../build'
 
-subprojects {
-    project.buildDir = "${rootProject.buildDir}/${project.name}"
-    project.evaluationDependsOn(':app')
-
-    // ✅ Safe Kotlin compiler override
-    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-        kotlinOptions {
-            jvmTarget = '17'
-            apiVersion = '1.9'
-            languageVersion = '1.9'
-            freeCompilerArgs += ['-Xskip-metadata-version-check']
-        }
-    }
-
-    // ✅ Force compileSdkVersion & namespace if missing
-    if (project.plugins.hasPlugin("com.android.library") || project.plugins.hasPlugin("com.android.application")) {
+// ✅ EARLY FIX — apply SDK + namespace before evaluation
+gradle.beforeProject { project ->
+    if (project.hasProperty("android")) {
         project.android {
             if (!project.hasProperty("compileSdkVersion")) {
                 compileSdkVersion 35
@@ -45,6 +32,21 @@ subprojects {
             if (!project.hasProperty("namespace")) {
                 namespace = "com.example.visora_ai_flutter"
             }
+        }
+    }
+}
+
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+    project.evaluationDependsOn(':app')
+
+    // ✅ Kotlin setup
+    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+        kotlinOptions {
+            jvmTarget = '17'
+            apiVersion = '1.9'
+            languageVersion = '1.9'
+            freeCompilerArgs += ['-Xskip-metadata-version-check']
         }
     }
 }
