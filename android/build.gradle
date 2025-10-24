@@ -36,16 +36,14 @@ subprojects {
         }
     }
 
-    // ✅ Force compileSdkVersion for all submodules (connectivity_plus fix)
-    afterEvaluate { project ->
-        if (project.hasProperty("android")) {
-            project.android {
-                if (!project.android.hasProperty("compileSdkVersion")) {
-                    compileSdkVersion 35
-                }
-                if (!project.android.hasProperty("namespace")) {
-                    namespace = "com.example.visora_ai_flutter"
-                }
+    // ✅ Force compileSdkVersion & namespace if missing
+    if (project.plugins.hasPlugin("com.android.library") || project.plugins.hasPlugin("com.android.application")) {
+        project.android {
+            if (!project.hasProperty("compileSdkVersion")) {
+                compileSdkVersion 35
+            }
+            if (!project.hasProperty("namespace")) {
+                namespace = "com.example.visora_ai_flutter"
             }
         }
     }
