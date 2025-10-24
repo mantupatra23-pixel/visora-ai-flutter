@@ -13,39 +13,44 @@ dependencies:
   # 🌐 HTTP Requests (Backend Communication)
   http: ^1.2.2
 
-  # 📂 File Picker (Voice Uploads)
+  # 🎙️ File Picker (Voice Uploads)
   file_picker: ^8.0.0+1
 
-  # 🖼️ Image Picker (optional for thumbnails)
+  # 🖼️ Image Picker (optional/for thumbnails)
   image_picker: ^1.1.1
 
-  # 🎞️ Lottie Animations
+  # 💫 Lottie Animations
   lottie: ^3.1.0
 
-  # 🖌️ Flutter SVG (for vector icons)
+  # 🧩 Flutter SVG (for vector icons)
   flutter_svg: ^2.0.10+1
 
-  # 🔤 Google Fonts
+  # 🔠 Google Fonts
   google_fonts: ^6.2.1
 
-  # 🧠 Image Parser / Filters (for later filters & effects)
+  # 🎨 Image Parser / Filters (for later filters & effects)
   image: ^4.2.0
-  http_parser: ^4.0.2
+  image_parser: ^4.0.2
   blur: ^3.1.0
 
-  # 🌎 URL Launcher (To open video links)
+  # 🌍 URL Launcher (To open video links)
   url_launcher: ^6.3.0
 
-  # 💾 Path Provider (optional caching)
+  # 📂 Path Provider (optional caching)
   path_provider: ^2.1.3
 
-  # 💬 WebSocket Channel (Live preview)
+  # 🔁 WebSocket Channel (Live preview)
   web_socket_channel: ^3.0.1
+
+  # 🔥 Firebase Core (App Initialization)
+  firebase_core: ^3.4.1
+
+  # 👤 Firebase Auth (Future Login)
+  firebase_auth: ^5.2.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
   flutter_launcher_icons: ^0.13.1
 
 flutter:

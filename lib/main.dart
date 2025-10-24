@@ -1,29 +1,42 @@
-// VISORA v42 – Ultimate AI Studio (Single File Power Build)
-// Full app in one file: Home + Create + Templates + Profile + Auto Upload
-
+// lib/main.dart
+// Visora - Single-file frontend (final)
+// Assumes pubspec contains packages: http, file_picker, image_picker, web_socket_channel, url_launcher, google_fonts, lottie, flutter_svg, firebase_core (optional)
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:http/http.dart' as http;
-import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:lottie/lottie.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
-// 🌐 Live Backend Base
-const String backendBase = "https://visora-ai-5nqs.onrender.com";
+/// Optional firebase imports (keep, but ensure firebase is configured on platform)
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-// 🚀 MAIN ENTRY
-Future<void> main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+
+  // Optional: initialize firebase if config exists. If not, app continues without crash.
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    // No Firebase configured — proceed but show limited functionality
+    debugPrint('Firebase init skipped or failed: $e');
+  }
+
   runApp(const VisoraApp());
 }
 
-// 🧱 Root App
+/// >>> SET YOUR BACKEND BASE URL HERE <<<
+/// Use the live backend URL: e.g. https://visora-ai-5nqs.onrender.com
+const String backendBase = 'https://visora-ai-5nqs.onrender.com';
+
 class VisoraApp extends StatelessWidget {
   const VisoraApp({super.key});
 
@@ -34,130 +47,15 @@ class VisoraApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
         textTheme: GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme),
-        primaryColor: Colors.deepPurpleAccent,
         scaffoldBackgroundColor: const Color(0xFF0C0C14),
-        colorScheme: const ColorScheme.dark().copyWith(
-          secondary: Colors.deepPurpleAccent,
-          surface: Color(0xFF12121A),
-        ),
+        primaryColor: Colors.deepPurpleAccent,
+        colorScheme: ColorScheme.fromSwatch().copyWith(secondary: Colors.pinkAccent),
       ),
-      home: const VisoraMainController(),
+      home: const UltraCreateScreen(),
     );
   }
 }
 
-// 🧭 Bottom Navigation Controller
-class VisoraMainController extends StatefulWidget {
-  const VisoraMainController({super.key});
-
-  @override
-  State<VisoraMainController> createState() => _VisoraMainControllerState();
-}
-
-class _VisoraMainControllerState extends State<VisoraMainController> {
-  int _currentIndex = 0;
-  final List<Widget> _pages = const [
-    HomeFeedScreen(),
-    UltraCreateScreen(),
-    TemplateLibraryScreen(),
-    VisoraProfileScreen(),
-  ];
-
-  void _onTabTapped(int index) => setState(() => _currentIndex = index);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: _pages[_currentIndex],
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFF1A1A26),
-          border: Border(top: BorderSide(color: Colors.white10, width: 0.5)),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: _onTabTapped,
-          backgroundColor: Colors.transparent,
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: Colors.deepPurpleAccent,
-          unselectedItemColor: Colors.white54,
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.add_circle_outline), label: 'Create'),
-            BottomNavigationBarItem(icon: Icon(Icons.video_library_outlined), label: 'Templates'),
-            BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// 🏠 HOME FEED (Trending)
-class HomeFeedScreen extends StatelessWidget {
-  const HomeFeedScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final demoVideos = List.generate(10, (i) => "AI Video #${i + 1}");
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("🔥 Trending AI Creations"),
-        backgroundColor: Colors.deepPurpleAccent,
-      ),
-      body: GridView.builder(
-        padding: const EdgeInsets.all(12),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2, crossAxisSpacing: 8, mainAxisSpacing: 8,
-        ),
-        itemCount: demoVideos.length,
-        itemBuilder: (_, i) => GestureDetector(
-          onTap: () => _showSnack(context, "Coming soon: Video Viewer"),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white10,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Text(demoVideos[i],
-                  style: const TextStyle(fontSize: 14, color: Colors.white70)),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// 🧠 TEMPLATE LIBRARY
-class TemplateLibraryScreen extends StatelessWidget {
-  const TemplateLibraryScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final templates = ["Motivational", "Gaming", "Tech", "Vlog", "News", "Business"];
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("🎨 Template Library"),
-        backgroundColor: Colors.deepPurpleAccent,
-      ),
-      body: ListView.builder(
-        itemCount: templates.length,
-        padding: const EdgeInsets.all(12),
-        itemBuilder: (_, i) => Card(
-          color: Colors.white10,
-          child: ListTile(
-            title: Text(templates[i], style: const TextStyle(color: Colors.white)),
-            trailing: const Icon(Icons.play_circle_outline, color: Colors.deepPurpleAccent),
-            onTap: () => _showSnack(context, "Template: ${templates[i]} selected"),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// 🎬 ULTRA CREATE SCREEN (Full AI Creation)
 class UltraCreateScreen extends StatefulWidget {
   const UltraCreateScreen({super.key});
 
@@ -167,194 +65,395 @@ class UltraCreateScreen extends StatefulWidget {
 
 class _UltraCreateScreenState extends State<UltraCreateScreen> {
   final TextEditingController _scriptController = TextEditingController();
-  String _selectedLang = 'English';
-  String _selectedQuality = 'HD';
-  String? _voicePath;
-  String? _previewUrl;
-  String? _finalUrl;
-  bool _isGenerating = false;
-  bool _isPreviewing = false;
-  WebSocketChannel? _channel;
+  final TextEditingController _titleController = TextEditingController();
 
-  @override
-  void dispose() {
-    _channel?.sink.close();
-    super.dispose();
+  // Options
+  String _language = 'hi-IN'; // default Hindi (use IETF tag)
+  String _quality = '1080p';
+  String _voiceGender = 'female';
+
+  // file picks
+  File? _voiceSampleFile;
+  XFile? _thumbnailFile;
+  bool _isLoading = false;
+  String? _jobId;
+  String? _resultUrl;
+  String _statusText = 'Idle';
+
+  WebSocketChannel? _wsChannel;
+  StreamSubscription? _wsSubscription;
+
+  // Helper to show snack
+  void _showSnack(String message, {bool error = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: error ? Colors.redAccent : Colors.green,
+      ),
+    );
   }
 
   Future<void> _pickVoiceSample() async {
     final result = await FilePicker.platform.pickFiles(type: FileType.audio);
-    if (result != null) setState(() => _voicePath = result.files.first.path);
+    if (result != null && result.files.single.path != null) {
+      setState(() => _voiceSampleFile = File(result.files.single.path!));
+      _showSnack('Voice sample selected');
+    }
   }
 
-  Future<void> _generateVideo() async {
-    if (_scriptController.text.isEmpty) return _showSnack('Please enter script');
+  Future<void> _pickThumbnail() async {
+    final ImagePicker img = ImagePicker();
+    final XFile? image = await img.pickImage(source: ImageSource.gallery, maxWidth: 1024);
+    if (image != null) {
+      setState(() => _thumbnailFile = image);
+      _showSnack('Thumbnail selected');
+    }
+  }
+
+  Future<Map<String, dynamic>?> _startGeneration() async {
+    // Validate script
+    final script = _scriptController.text.trim();
+    if (script.isEmpty) {
+      _showSnack('Please enter a script', error: true);
+      return null;
+    }
 
     setState(() {
-      _isGenerating = true;
-      _finalUrl = null;
+      _isLoading = true;
+      _statusText = 'Submitting job...';
     });
 
     try {
       final uri = Uri.parse('$backendBase/generate_video');
-      final req = http.MultipartRequest('POST', uri)
-        ..fields['script'] = _scriptController.text
-        ..fields['language'] = _selectedLang
-        ..fields['quality'] = _selectedQuality;
+      final request = http.MultipartRequest('POST', uri);
+      request.fields['script'] = script;
+      request.fields['language'] = _language;
+      request.fields['quality'] = _quality;
+      request.fields['voice_gender'] = _voiceGender;
+      request.fields['title'] = _titleController.text.trim();
 
-      if (_voicePath != null) {
-        req.files.add(await http.MultipartFile.fromPath('voice', _voicePath!));
+      if (_voiceSampleFile != null) {
+        request.files.add(await http.MultipartFile.fromPath('voice_sample', _voiceSampleFile!.path));
       }
 
-      final res = await req.send();
-      final body = await http.Response.fromStream(res);
-      if (body.statusCode == 200) {
-        final data = jsonDecode(body.body);
-        final jobId = data['job_id'];
-        _connectWebSocket(jobId);
+      if (_thumbnailFile != null) {
+        request.files.add(await http.MultipartFile.fromPath('thumbnail', _thumbnailFile!.path));
+      }
+
+      final streamed = await request.send();
+      final resp = await http.Response.fromStream(streamed);
+      if (resp.statusCode >= 200 && resp.statusCode < 300) {
+        final jsonResp = jsonDecode(resp.body) as Map<String, dynamic>;
+        return jsonResp;
       } else {
-        _showSnack('Failed to start generation');
+        debugPrint('Generate API error ${resp.statusCode}: ${resp.body}');
+        _showSnack('Server rejected job: ${resp.statusCode}', error: true);
+        return null;
       }
     } catch (e) {
-      _showSnack('Error: $e');
+      debugPrint('startGeneration error: $e');
+      _showSnack('Failed to submit job', error: true);
+      return null;
     } finally {
-      setState(() => _isGenerating = false);
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _onCreatePressed() async {
+    final resp = await _startGeneration();
+    if (resp == null) return;
+    final String jobId = resp['job_id']?.toString() ?? '';
+    if (jobId.isEmpty) {
+      _showSnack('Invalid job response', error: true);
+      return;
+    }
+    setState(() {
+      _jobId = jobId;
+      _statusText = 'Job submitted: $jobId';
+    });
+    _connectWebSocket(jobId);
+    _showSnack('Job started: $jobId');
   }
 
   void _connectWebSocket(String jobId) {
-    final wsUrl = backendBase.replaceFirst('https', 'wss') + '/status/$jobId';
-    _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
-    setState(() => _isPreviewing = true);
+    // Close previous if any
+    _wsSubscription?.cancel();
+    _wsChannel?.sink.close();
 
-    _channel!.stream.listen((msg) {
-      final data = jsonDecode(msg);
-      if (data['preview'] != null) setState(() => _previewUrl = data['preview']);
-      if (data['final_url'] != null) {
-        setState(() {
-          _finalUrl = data['final_url'];
-          _isPreviewing = false;
-        });
+    // WebSocket endpoint assumed: ws://backend/socket or wss://
+    // Backend must accept: /ws/{job_id} or a general ws route. We'll try /ws/job/<id>
+    final wsUri = Uri.parse(backendBase.replaceFirst('http', 'ws') + '/ws/job/$jobId');
+    try {
+      _wsChannel = WebSocketChannel.connect(wsUri);
+    } catch (e) {
+      debugPrint('WS connect failed: $e');
+      _showSnack('Websocket connect failed', error: true);
+      return;
+    }
+
+    _wsSubscription = _wsChannel!.stream.listen((event) {
+      debugPrint('WS event: $event');
+      try {
+        final data = (event is String) ? jsonDecode(event) : event;
+        if (data is Map && data.containsKey('status')) {
+          setState(() {
+            _statusText = data['status'].toString();
+            if (data.containsKey('progress')) {
+              _statusText += ' • ${data['progress']}%';
+            }
+            if (data.containsKey('result_url')) {
+              _resultUrl = data['result_url']?.toString();
+            }
+          });
+        } else {
+          // plain string
+          setState(() => _statusText = event.toString());
+        }
+      } catch (ex) {
+        setState(() => _statusText = event.toString());
       }
+    }, onDone: () {
+      debugPrint('WS closed');
+    }, onError: (err) {
+      debugPrint('WS error: $err');
+      _showSnack('WS error', error: true);
     });
   }
 
-  Future<void> _downloadFinalVideo() async {
-    if (_finalUrl == null) return _showSnack('Video not ready');
+  Future<void> _fetchStatusManually() async {
+    if (_jobId == null) {
+      _showSnack('No job to check', error: true);
+      return;
+    }
     try {
-      final res = await http.get(Uri.parse(_finalUrl!));
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/visora_final_video.mp4');
-      await file.writeAsBytes(res.bodyBytes);
-      _showSnack('Saved: ${file.path}');
+      final r = await http.get(Uri.parse('$backendBase/status/$_jobId'));
+      if (r.statusCode == 200) {
+        final map = jsonDecode(r.body) as Map<String, dynamic>;
+        setState(() {
+          _statusText = map['status']?.toString() ?? _statusText;
+          if (map.containsKey('result_url')) _resultUrl = map['result_url']?.toString();
+        });
+        _showSnack('Status updated');
+      } else {
+        _showSnack('Status fetch failed', error: true);
+      }
     } catch (e) {
-      _showSnack('Download failed: $e');
+      debugPrint('status fetch error: $e');
+      _showSnack('Could not fetch status', error: true);
     }
   }
 
-  void _showSnack(String msg) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  Future<void> _downloadResult() async {
+    if (_resultUrl == null || _resultUrl!.isEmpty) {
+      _showSnack('Result not ready', error: true);
+      return;
+    }
+    final uri = Uri.parse(_resultUrl!);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      _showSnack('Cannot open download URL', error: true);
+    }
+  }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("🎬 Ultra AI Creator"), backgroundColor: Colors.deepPurpleAccent),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text("Script:", style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _scriptController,
-              maxLines: 6,
-              decoration: InputDecoration(
-                hintText: "Enter your video script...",
-                filled: true,
-                fillColor: Colors.white12,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+  void dispose() {
+    _wsSubscription?.cancel();
+    _wsChannel?.sink.close();
+    _scriptController.dispose();
+    _titleController.dispose();
+    super.dispose();
+  }
+
+  Widget _buildHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        Text('Visora – Ultimate AI Studio', style: Theme.of(context).textTheme.headlineSmall),
+        const SizedBox(height: 6),
+        Text('Create videos from text • Multi-language • Live preview', style: Theme.of(context).textTheme.bodyMedium),
+        const SizedBox(height: 12),
+      ],
+    );
+  }
+
+  Widget _buildOptionsCard() {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(children: [
+          TextField(
+            controller: _titleController,
+            decoration: const InputDecoration(labelText: 'Title (optional)'),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _scriptController,
+            decoration: const InputDecoration(labelText: 'Script (what you want in video)'),
+            maxLines: 6,
+          ),
+          const SizedBox(height: 8),
+          Row(children: [
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                value: _language,
+                items: const [
+                  DropdownMenuItem(value: 'hi-IN', child: Text('Hindi (hi-IN)')),
+                  DropdownMenuItem(value: 'en-US', child: Text('English (en-US)')),
+                  DropdownMenuItem(value: 'bn-IN', child: Text('Bengali (bn-IN)')),
+                  DropdownMenuItem(value: 'te-IN', child: Text('Telugu (te-IN)')),
+                ],
+                onChanged: (v) => setState(() => _language = v ?? _language),
+                decoration: const InputDecoration(labelText: 'Language'),
               ),
             ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField(
-                    value: _selectedLang,
-                    items: ['English', 'Hindi', 'Tamil', 'Telugu']
-                        .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                        .toList(),
-                    onChanged: (v) => setState(() => _selectedLang = v!),
-                    decoration: const InputDecoration(labelText: "Language"),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: DropdownButtonFormField(
-                    value: _selectedQuality,
-                    items: ['HD', 'Full HD', '4K']
-                        .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                        .toList(),
-                    onChanged: (v) => setState(() => _selectedQuality = v!),
-                    decoration: const InputDecoration(labelText: "Quality"),
-                  ),
-                ),
-              ],
+            const SizedBox(width: 8),
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                value: _quality,
+                items: const [
+                  DropdownMenuItem(value: '480p', child: Text('480p')),
+                  DropdownMenuItem(value: '720p', child: Text('720p')),
+                  DropdownMenuItem(value: '1080p', child: Text('1080p')),
+                ],
+                onChanged: (v) => setState(() => _quality = v ?? _quality),
+                decoration: const InputDecoration(labelText: 'Quality'),
+              ),
             ),
-            const SizedBox(height: 16),
+          ]),
+          const SizedBox(height: 8),
+          Row(children: [
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                value: _voiceGender,
+                items: const [
+                  DropdownMenuItem(value: 'female', child: Text('Female Voice')),
+                  DropdownMenuItem(value: 'male', child: Text('Male Voice')),
+                ],
+                onChanged: (v) => setState(() => _voiceGender = v ?? _voiceGender),
+                decoration: const InputDecoration(labelText: 'Voice'),
+              ),
+            ),
+            const SizedBox(width: 8),
             ElevatedButton.icon(
               onPressed: _pickVoiceSample,
-              icon: const Icon(Icons.mic_none),
-              label: Text(_voicePath == null ? "Upload Voice Sample" : "Voice Selected ✅"),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.purpleAccent),
+              icon: const Icon(Icons.mic),
+              label: Text(_voiceSampleFile == null ? 'Add Voice Sample' : 'Voice Added'),
             ),
-            const SizedBox(height: 16),
-            Center(
-              child: ElevatedButton.icon(
-                onPressed: _isGenerating ? null : _generateVideo,
-                icon: const Icon(Icons.play_circle_outline),
-                label: Text(_isGenerating ? "Generating..." : "Generate Video"),
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurpleAccent, padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 14)),
+          ]),
+          const SizedBox(height: 8),
+          Row(children: [
+            ElevatedButton.icon(
+              onPressed: _pickThumbnail,
+              icon: const Icon(Icons.image),
+              label: Text(_thumbnailFile == null ? 'Pick Thumbnail' : 'Thumbnail'),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _onCreatePressed,
+                child: _isLoading ? const SizedBox(height: 18, child: CircularProgressIndicator()) : const Text('Create Video'),
               ),
             ),
-            if (_isPreviewing && _previewUrl != null) ...[
-              const SizedBox(height: 24),
-              const Text("Live Preview:", style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(_previewUrl!, fit: BoxFit.cover),
+          ]),
+        ]),
+      ),
+    );
+  }
+
+  Widget _buildLivePreview() {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: SizedBox(
+        height: 260,
+        child: Stack(
+          children: [
+            // Placeholder area for the final video / live frames
+            Positioned.fill(
+              child: _resultUrl == null
+                  ? Container(color: Colors.grey.shade300)
+                  : Image.network(_resultUrl!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(color: Colors.grey.shade300)),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Row(children: [
+                IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchStatusManually),
+                IconButton(icon: const Icon(Icons.download), onPressed: _downloadResult),
+              ]),
+            ),
+            Positioned(
+              bottom: 8,
+              left: 8,
+              right: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(8)),
+                child: Row(
+                  children: [
+                    Expanded(child: Text(_statusText, style: const TextStyle(color: Colors.white))),
+                    if (_isLoading) const SizedBox(width: 8, child: CircularProgressIndicator(strokeWidth: 2)),
+                  ],
+                ),
               ),
-            ],
-            if (_finalUrl != null) ...[
-              const SizedBox(height: 30),
-              const Text("✅ Video Ready!"),
-              const SizedBox(height: 10),
-              ElevatedButton.icon(
-                onPressed: _downloadFinalVideo,
-                icon: const Icon(Icons.download),
-                label: const Text("Download Video"),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.greenAccent),
-              ),
-            ],
+            ),
           ],
         ),
       ),
     );
   }
-}
 
-// 👤 PROFILE SCREEN
-class VisoraProfileScreen extends StatelessWidget {
-  const VisoraProfileScreen({super.key});
+  Widget _buildExtras() {
+    return Column(children: [
+      ListTile(
+        leading: const Icon(Icons.info_outline),
+        title: const Text('Backend Base'),
+        subtitle: Text(backendBase, style: const TextStyle(fontSize: 12)),
+      ),
+      ListTile(
+        leading: const Icon(Icons.check_circle_outline),
+        title: const Text('Real-time WebSocket'),
+        subtitle: const Text('Connected to job WebSocket for live progress'),
+        trailing: Icon(_wsChannel != null ? Icons.toggle_on : Icons.toggle_off, color: _wsChannel != null ? Colors.green : Colors.grey),
+      ),
+    ]);
+  }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text("Profile"), backgroundColor: Colors.deepPurpleAccent),
-        body: const Center(child: Text("Login / Upload Integration coming soon", style: TextStyle(color: Colors.white70))),
-      );
-
-// 🌐 Global Utils
-Future<void> _showSnack(BuildContext ctx, String msg) async =>
-    ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(msg)));
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Visora – Ultimate AI Studio'),
+        centerTitle: false,
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(),
+              _buildOptionsCard(),
+              _buildLivePreview(),
+              const SizedBox(height: 8),
+              _buildExtras(),
+              const SizedBox(height: 20),
+              Center(
+                child: Lottie.asset(
+                  'assets/lottie/loading.json',
+                  width: 70,
+                  height: 70,
+                  repeat: true,
+                ),
+              ),
+              const SizedBox(height: 40),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
