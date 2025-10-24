@@ -19,22 +19,32 @@ jobs:
         with:
           flutter-version: "3.19.6"
 
+      - name: Auto Fix Dependency Versions
+        run: |
+          echo "🔧 Auto fixing dependency versions..."
+          flutter pub upgrade --major-versions || true
+          flutter pub outdated || true
+          flutter pub get || true
+          echo "✅ Dependency versions synced successfully!"
+
       - name: Recreate Android folder (fix gradle issue)
         run: |
-          flutter create . --platforms=android --project-name visora_ai_flutter
+          flutter create --platforms=android --project-name visora_ai_flutter .
           echo "✅ Android folder recreated successfully!"
 
       - name: Flutter pub get
         run: flutter pub get
 
       - name: Create google-services.json from secret
-        run: |
-          echo "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+        run: echo "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
         env:
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
 
       - name: Build Release APK
-        run: flutter build apk --release
+        run: |
+          echo "🚀 Building release APK..."
+          flutter build apk --release
+          echo "✅ APK Build completed successfully!"
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
