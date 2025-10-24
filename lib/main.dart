@@ -198,7 +198,7 @@ class _GenerateVideoScreenState extends State<GenerateVideoScreen> {
   bool _isGenerating = false;
   String? _jobId;
   double _progress = 0.0;
-  String? _resultUrl;
+String _resultUrl = "";
   File? _voiceFile;
 
   // user options
@@ -456,8 +456,7 @@ class _GenerateVideoScreenState extends State<GenerateVideoScreen> {
                     IconButton(
                       icon: const Icon(Icons.copy),
                       onPressed: () {
-                        Clipboard.setData(ClipboardData(text: _resultUrl));
-                        _showSnack('Link copied');
+                     Clipboard.setData(ClipboardData(text: _resultUrl ?? ""));
                       },
                     ),
                   ]),
