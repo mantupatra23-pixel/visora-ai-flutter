@@ -1,4 +1,4 @@
-name: Build & Auto-Release Signed APK (Cloud)
+name: 🌩️ Visora AI Cloud v2 – Auto-Healing Build & Release APK
 
 on:
   push:
@@ -11,43 +11,90 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: 🧩 Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Flutter
+      - name: ⚙️ Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-         flutter-version: "3.24.0"
+          flutter-version: "3.19.6"
 
-      - name: Auto Fix Dependency Versions
+      - name: 🛠️ Auto-Heal Gradle Config
         run: |
-          echo "🔧 Auto fixing dependency versions..."
-          flutter pub upgrade --major-versions || true
-          flutter pub outdated || true
-          flutter pub get || true
-          echo "✅ Dependency versions synced successfully!"
+          echo "⚙️ Applying Gradle Auto-Heal Fix..."
+          cat > android/build.gradle <<'EOF'
+          buildscript {
+              ext.kotlin_version = '1.9.25'
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+              dependencies {
+                  classpath 'com.android.tools.build:gradle:8.5.2'
+                  classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+                  classpath 'com.google.gms:google-services:4.4.2'
+              }
+          }
 
-      - name: Recreate Android folder (fix gradle issue)
-        run: |
-          flutter create --platforms=android --project-name visora_ai_flutter .
-          echo "✅ Android folder recreated successfully!"
+          allprojects {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
 
-      - name: Flutter pub get
+          rootProject.buildDir = '../build'
+
+          // ✅ EARLY EVALUATION FIX
+          gradle.beforeProject { project ->
+              if (project.hasProperty("android")) {
+                  project.android {
+                      if (!project.hasProperty("compileSdkVersion")) {
+                          compileSdkVersion 35
+                      }
+                      if (!project.hasProperty("namespace")) {
+                          namespace = "com.example.visora_ai_flutter"
+                      }
+                  }
+              }
+          }
+
+          subprojects {
+              project.buildDir = "${rootProject.buildDir}/${project.name}"
+              project.evaluationDependsOn(':app')
+
+              tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+                  kotlinOptions {
+                      jvmTarget = '17'
+                      apiVersion = '1.9'
+                      languageVersion = '1.9'
+                      freeCompilerArgs += ['-Xskip-metadata-version-check']
+                  }
+              }
+          }
+
+          tasks.register("clean", Delete) {
+              delete rootProject.buildDir
+          }
+          EOF
+          echo "✅ Gradle auto-heal complete!"
+
+      - name: 📦 Flutter Pub Get
         run: flutter pub get
 
-      - name: Create google-services.json from secret
-        run: echo "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
-        env:
-          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+      - name: 🔑 Setup Google Services
+        run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > android/app/google-services.json
 
-      - name: Build Release APK
+      - name: 🚀 Build Release APK
         run: |
-          echo "🚀 Building release APK..."
+          echo "🏗️ Building Visora AI Release APK..."
           flutter build apk --release
-          echo "✅ APK Build completed successfully!"
+          echo "✅ Build Completed Successfully!"
 
-      - name: Upload APK Artifact
+      - name: ☁️ Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Visora-AI-APK
+          name: Visora-AI-Cloud-Build
           path: build/app/outputs/flutter-apk/app-release.apk
