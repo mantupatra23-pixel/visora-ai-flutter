@@ -1,11 +1,12 @@
 buildscript {
-    ext.kotlin_version = '1.9.24'  // ✅ Latest stable Kotlin version
+    ext.kotlin_version = '1.9.25'  // ✅ Latest Kotlin version (October 2025)
     repositories {
         google()
         mavenCentral()
+        gradlePluginPortal()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.5.1'
+        classpath 'com.android.tools.build:gradle:8.5.2'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath 'com.google.gms:google-services:4.4.2'
     }
@@ -19,6 +20,7 @@ allprojects {
 }
 
 rootProject.buildDir = "../build"
+
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
     project.evaluationDependsOn(":app")
