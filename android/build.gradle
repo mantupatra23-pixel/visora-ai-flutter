@@ -20,19 +20,19 @@ allprojects {
     }
 }
 
-rootProject.buildDir = "../build"
+rootProject.buildDir = '../build'
 
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
-    project.evaluationDependsOn(":app")
+    project.evaluationDependsOn(':app')
 
-    // ✅ Safe Kotlin compiler override (no afterEvaluate)
+    // ✅ Safe Kotlin compiler override (no afterEvaluate needed)
     tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
         kotlinOptions {
             jvmTarget = '17'
-            apiVersion = "1.9"
-            languageVersion = "1.9"
-            freeCompilerArgs += ["-Xskip-metadata-version-check"]
+            apiVersion = '1.9'
+            languageVersion = '1.9'
+            freeCompilerArgs += ['-Xskip-metadata-version-check']
         }
     }
 }
