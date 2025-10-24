@@ -9,15 +9,35 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
+  # ⚙️ HTTP Requests (Backend Communication)
   http: ^0.13.6
-  file_picker: ^5.2.3
+
+  # 🎙️ File Picker (Voice Uploads)
+  file_picker: ^5.2.4
+
+  # 📷 Image Picker (optional for thumbnails)
   image_picker: ^0.8.7+5
+
+  # 🧩 Lottie Animations
   lottie: ^2.3.2
+
+  # 🧠 Flutter SVG (for vector icons)
   flutter_svg: ^1.1.6
+
+  # ✍️ Fonts
   google_fonts: ^4.0.4
-  mime: ^1.0.2
-  http_parser: ^4.0.0
+
+  # 🌈 Image Parser / Filters (for later filters & effects)
+  image: ^4.0.17
+  http_parser: ^4.0.2
   blur: ^3.1.0
+
+  # 🌐 URL Launcher (To open video links)
+  url_launcher: ^6.1.7
+
+  # 📁 Path Provider (optional caching)
+  path_provider: ^2.1.1
 
 dev_dependencies:
   flutter_test:
