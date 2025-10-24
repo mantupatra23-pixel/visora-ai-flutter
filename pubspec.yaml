@@ -4,48 +4,53 @@ publish_to: "none"
 version: 1.0.0+1
 
 environment:
-  sdk: ">=2.18.0 <4.0.0"
+  sdk: ">=3.2.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
 
-  # ⚙️ HTTP Requests (Backend Communication)
-  http: ^0.13.6
+  # 🌐 HTTP Requests (Backend Communication)
+  http: ^1.2.2
 
-  # 🎙️ File Picker (Voice Uploads)
-  file_picker: ^5.2.4
+  # 📂 File Picker (Voice Uploads)
+  file_picker: ^8.0.0+1
 
-  # 📷 Image Picker (optional for thumbnails)
-  image_picker: ^0.8.7+5
+  # 🖼️ Image Picker (optional for thumbnails)
+  image_picker: ^1.1.1
 
-  # 🧩 Lottie Animations
-  lottie: ^2.3.2
+  # 🎞️ Lottie Animations
+  lottie: ^3.1.0
 
-  # 🧠 Flutter SVG (for vector icons)
-  flutter_svg: ^1.1.6
+  # 🖌️ Flutter SVG (for vector icons)
+  flutter_svg: ^2.0.10+1
 
-  # ✍️ Fonts
-  google_fonts: ^4.0.4
+  # 🔤 Google Fonts
+  google_fonts: ^6.2.1
 
-  # 🌈 Image Parser / Filters (for later filters & effects)
-  image: ^4.0.17
+  # 🧠 Image Parser / Filters (for later filters & effects)
+  image: ^4.2.0
   http_parser: ^4.0.2
   blur: ^3.1.0
 
-  # 🌐 URL Launcher (To open video links)
-  url_launcher: ^6.1.7
+  # 🌎 URL Launcher (To open video links)
+  url_launcher: ^6.3.0
 
-  # 📁 Path Provider (optional caching)
-  path_provider: ^2.1.1
+  # 💾 Path Provider (optional caching)
+  path_provider: ^2.1.3
+
+  # 💬 WebSocket Channel (Live preview)
+  web_socket_channel: ^3.0.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
   flutter_launcher_icons: ^0.13.1
 
 flutter:
   uses-material-design: true
+
   assets:
     - assets/lottie/loading.json
     - assets/lottie/done.json
