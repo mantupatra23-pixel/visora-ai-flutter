@@ -15,6 +15,8 @@ android {
         targetSdk 34
         versionCode 1
         versionName "1.0"
+
+        multiDexEnabled true
     }
 
     buildTypes {
@@ -22,6 +24,11 @@ android {
             signingConfig signingConfigs.debug
             minifyEnabled false
             shrinkResources false
+            // 👇 ye ensure karega ke Firebase aur kotlin libs obfuscate na ho
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            minifyEnabled false
         }
     }
 
@@ -32,6 +39,12 @@ android {
 
     kotlinOptions {
         jvmTarget = '17'
+    }
+
+    packagingOptions {
+        resources {
+            excludes += ['META-INF/DEPENDENCIES', 'META-INF/NOTICE', 'META-INF/LICENSE']
+        }
     }
 }
 
@@ -46,7 +59,11 @@ dependencies {
     // 🔥 Firebase modules
     implementation 'com.google.firebase:firebase-auth'
     implementation 'com.google.firebase:firebase-analytics'
+    implementation 'com.google.firebase:firebase-messaging'
+    implementation 'com.google.firebase:firebase-storage'
+    implementation 'com.google.firebase:firebase-crashlytics'
 
     // AndroidX core dependency
     implementation 'androidx.core:core-ktx:1.13.1'
+    implementation 'androidx.multidex:multidex:2.0.1'
 }
