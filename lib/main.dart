@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:lottie/lottie.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:async';
-import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(const VisoraApp());
@@ -20,8 +19,12 @@ class VisoraApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Visora – Ultimate AI Studio',
       theme: ThemeData(
-        primarySwatch: Colors.purple,
-        textTheme: GoogleFonts.poppinsTextTheme(),
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF0E0E10),
+        textTheme: GoogleFonts.poppinsTextTheme(
+          ThemeData.dark().textTheme,
+        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.purpleAccent),
       ),
       home: const GenerateVideoScreen(),
     );
@@ -37,11 +40,11 @@ class GenerateVideoScreen extends StatefulWidget {
 
 class _GenerateVideoScreenState extends State<GenerateVideoScreen> {
   final TextEditingController _scriptController = TextEditingController();
-  String _status = "Idle";
-  String _resultUrl = ""; // ✅ Fixed: non-nullable with default empty string
   late WebSocketChannel _channel;
-  bool _isGenerating = false;
+  String _status = "Waiting for input...";
+  String _resultUrl = "";
   double _progress = 0.0;
+  bool _isGenerating = false;
 
   @override
   void initState() {
@@ -50,26 +53,20 @@ class _GenerateVideoScreenState extends State<GenerateVideoScreen> {
   }
 
   void _connectWebSocket() {
-    try {
-      _channel = WebSocketChannel.connect(
-        Uri.parse('wss://visora-ai-5nqs.onrender.com/ws'),
-      );
+    _channel = WebSocketChannel.connect(
+      Uri.parse('wss://visora-ai-5nqs.onrender.com/ws'),
+    );
 
-      _channel.stream.listen((message) {
-        var data = json.decode(message);
-        setState(() {
-          _status = data["status"] ?? "Processing...";
-          _progress = (data["progress"] ?? 0) / 100;
-          if (data.containsKey("url")) {
-            _resultUrl = data["url"] ?? "";
-          }
-        });
-      });
-    } catch (e) {
+    _channel.stream.listen((message) {
+      var data = json.decode(message);
       setState(() {
-        _status = "WebSocket Error: $e";
+        _status = data["status"] ?? "Processing...";
+        _progress = (data["progress"] ?? 0) / 100;
+        if (data.containsKey("url")) {
+          _resultUrl = data["url"] ?? "";
+        }
       });
-    }
+    });
   }
 
   Future<void> _generateVideo() async {
@@ -77,25 +74,23 @@ class _GenerateVideoScreenState extends State<GenerateVideoScreen> {
 
     setState(() {
       _isGenerating = true;
-      _status = "Generating...";
+      _status = "Processing your video...";
       _progress = 0.0;
     });
 
-    final url = Uri.parse("https://visora-ai-5nqs.onrender.com/generate_video");
     final response = await http.post(
-      url,
-      headers: {"Content-Type": "application/json"},
+      Uri.parse('https://visora-ai-5nqs.onrender.com/generate_video'),
+      headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         "script": _scriptController.text,
-        "quality": "auto",
+        "quality": "HD",
         "language": "auto",
       }),
     );
 
     if (response.statusCode == 200) {
-      final data = json.decode(response.body);
       setState(() {
-        _status = "Render started: ${data['job_id']}";
+        _status = "Video generation started...";
       });
     } else {
       setState(() {
@@ -104,10 +99,10 @@ class _GenerateVideoScreenState extends State<GenerateVideoScreen> {
     }
   }
 
-  void _copyLink() {
-    Clipboard.setData(ClipboardData(text: _resultUrl ?? "")); // ✅ Safe copy
+  void _copyUrl() {
+    Clipboard.setData(ClipboardData(text: _resultUrl));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Link copied to clipboard")),
+      const SnackBar(content: Text("✅ Link copied to clipboard")),
     );
   }
 
@@ -122,53 +117,112 @@ class _GenerateVideoScreenState extends State<GenerateVideoScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Visora – Ultimate AI Studio"),
-        backgroundColor: Colors.purple,
+        title: const Text("🎬 Visora – Ultimate AI Studio"),
+        centerTitle: true,
+        backgroundColor: Colors.purpleAccent.shade400,
+        elevation: 5,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(18.0),
         child: SingleChildScrollView(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Lottie.asset("assets/lottie/loading.json", height: 150),
+              Lottie.asset(
+                'assets/lottie/loading.json',
+                height: 160,
+              ),
               const SizedBox(height: 10),
-              TextField(
-                controller: _scriptController,
-                decoration: const InputDecoration(
-                  labelText: "Enter your script",
-                  border: OutlineInputBorder(),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white10,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: Colors.purpleAccent.withOpacity(0.4)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.purple.withOpacity(0.3),
+                      blurRadius: 10,
+                      spreadRadius: 1,
+                    ),
+                  ],
                 ),
-                minLines: 3,
-                maxLines: 10,
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: _scriptController,
+                      style: const TextStyle(color: Colors.white),
+                      maxLines: 8,
+                      decoration: InputDecoration(
+                        hintText: "✍️ Enter your script for video...",
+                        hintStyle: const TextStyle(color: Colors.white54),
+                        border: InputBorder.none,
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 20),
               ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.purpleAccent,
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
                 onPressed: _isGenerating ? null : _generateVideo,
-                icon: const Icon(Icons.play_circle_fill),
-                label: const Text("Generate Video"),
+                icon: const Icon(Icons.auto_fix_high_rounded),
+                label: const Text(
+                  "Generate AI Video",
+                  style: TextStyle(fontSize: 16),
+                ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 30),
               LinearProgressIndicator(
                 value: _progress,
+                backgroundColor: Colors.white10,
                 color: Colors.purpleAccent,
                 minHeight: 6,
               ),
               const SizedBox(height: 10),
-              Text("Status: $_status"),
-              const SizedBox(height: 15),
+              Text(
+                _status,
+                style: const TextStyle(fontSize: 14, color: Colors.white70),
+              ),
+              const SizedBox(height: 25),
               if (_resultUrl.isNotEmpty)
-                Column(
-                  children: [
-                    SelectableText(
-                      "Result URL: $_resultUrl",
-                      style: const TextStyle(color: Colors.blue),
-                    ),
-                    TextButton.icon(
-                      onPressed: _copyLink,
-                      icon: const Icon(Icons.copy),
-                      label: const Text("Copy Link"),
-                    ),
-                  ],
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white12,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        "🎥 Your Video is Ready!",
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.purpleAccent),
+                      ),
+                      const SizedBox(height: 8),
+                      SelectableText(
+                        _resultUrl,
+                        style: const TextStyle(color: Colors.blueAccent),
+                      ),
+                      const SizedBox(height: 8),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.purple,
+                        ),
+                        onPressed: _copyUrl,
+                        icon: const Icon(Icons.copy),
+                        label: const Text("Copy Video Link"),
+                      ),
+                    ],
+                  ),
                 ),
             ],
           ),
