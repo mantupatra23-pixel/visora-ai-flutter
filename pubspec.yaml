@@ -16,7 +16,7 @@ dependencies:
   # 🎙️ File Picker (Voice Uploads)
   file_picker: ^8.0.0+1
 
-  # 🖼️ Image Picker (optional/for thumbnails)
+  # 🖼️ Image Picker (for thumbnails or background images)
   image_picker: ^1.1.1
 
   # 💫 Lottie Animations
@@ -25,33 +25,46 @@ dependencies:
   # 🧩 Flutter SVG (for vector icons)
   flutter_svg: ^2.0.10+1
 
-  # 🔠 Google Fonts
+  # 🔠 Google Fonts (for premium text styles)
   google_fonts: ^6.2.1
 
-  # 🎨 Image Parser / Filters (for later filters & effects)
+  # 🎨 Image Filters / Effects
   image: ^4.2.0
-  image_parser: ^4.0.2
   blur: ^3.1.0
 
-  # 🌍 URL Launcher (To open video links)
+  # 🌍 URL Launcher (to open video links)
   url_launcher: ^6.3.0
 
   # 📂 Path Provider (optional caching)
   path_provider: ^2.1.3
 
-  # 🔁 WebSocket Channel (Live preview)
+  # 🔁 WebSocket Channel (for live preview updates)
   web_socket_channel: ^3.0.1
 
-  # 🔥 Firebase Core (App Initialization)
+  # 🔥 Firebase Core (for app initialization)
   firebase_core: ^3.4.1
 
-  # 👤 Firebase Auth (Future Login)
+  # 👤 Firebase Auth (for future login module)
   firebase_auth: ^5.2.1
+
+  # 📦 Shared Preferences (for local settings)
+  shared_preferences: ^2.3.1
+
+  # 🧠 Provider (state management)
+  provider: ^6.1.2
+
+  # 🧾 JSON Serializable (for model parsing)
+  json_annotation: ^4.9.0
+
+  # 🎞️ Video Player (for live video preview)
+  video_player: ^2.8.6
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_launcher_icons: ^0.13.1
+  json_serializable: ^6.7.1
+  build_runner: ^2.4.8
 
 flutter:
   uses-material-design: true
