@@ -40,7 +40,13 @@ flutter {
 }
 
 dependencies {
+    // ✅ Use Firebase BOM for version management
     implementation platform('com.google.firebase:firebase-bom:33.4.0')
+
+    // 🔥 Firebase modules
     implementation 'com.google.firebase:firebase-auth'
-    implementation 'com.google.firebase:firebase-core'
+    implementation 'com.google.firebase:firebase-analytics'
+
+    // AndroidX core dependency
+    implementation 'androidx.core:core-ktx:1.13.1'
 }
