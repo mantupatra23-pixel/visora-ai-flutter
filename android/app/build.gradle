@@ -7,15 +7,14 @@ plugins {
 
 android {
     namespace "com.example.visora_ai_flutter"
-    compileSdk 34
+    compileSdk 35
 
     defaultConfig {
         applicationId "com.example.visora_ai_flutter"
         minSdk 23
-        targetSdk 34
+        targetSdk 35
         versionCode 1
         versionName "1.0"
-
         multiDexEnabled true
     }
 
@@ -24,8 +23,8 @@ android {
             signingConfig signingConfigs.debug
             minifyEnabled false
             shrinkResources false
-            // 👇 ye ensure karega ke Firebase aur kotlin libs obfuscate na ho
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // 👇 ensure karega Firebase aur Kotlin libs obfuscate na ho
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
         }
         debug {
             minifyEnabled false
@@ -53,7 +52,7 @@ flutter {
 }
 
 dependencies {
-    // ✅ Use Firebase BOM for version management
+    // ✅ Firebase BOM for version management
     implementation platform('com.google.firebase:firebase-bom:33.4.0')
 
     // 🔥 Firebase modules
@@ -63,7 +62,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-storage'
     implementation 'com.google.firebase:firebase-crashlytics'
 
-    // AndroidX core dependency
+    // 🧩 AndroidX + MultiDex support
     implementation 'androidx.core:core-ktx:1.13.1'
     implementation 'androidx.multidex:multidex:2.0.1'
 }
