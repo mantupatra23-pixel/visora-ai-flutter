@@ -25,9 +25,18 @@ rootProject.buildDir = '../build'
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
     project.evaluationDependsOn(':app')
-    
-   // ✅ Force compileSdkVersion for all submodules (connectivity_plus fix)
-subprojects {
+
+    // ✅ Safe Kotlin compiler override
+    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+        kotlinOptions {
+            jvmTarget = '17'
+            apiVersion = '1.9'
+            languageVersion = '1.9'
+            freeCompilerArgs += ['-Xskip-metadata-version-check']
+        }
+    }
+
+    // ✅ Force compileSdkVersion for all submodules (connectivity_plus fix)
     afterEvaluate { project ->
         if (project.hasProperty("android")) {
             project.android {
@@ -40,4 +49,8 @@ subprojects {
             }
         }
     }
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
 }
