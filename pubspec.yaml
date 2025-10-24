@@ -68,7 +68,7 @@ dependencies:
   device_info_plus: ^11.0.1
 
   # 🧠 AI Text / Speech / Translation
-  translator: ^1.2.10
+  translator: ^1.0.0
   speech_to_text: ^6.6.0
   flutter_tts: ^4.0.2
 
