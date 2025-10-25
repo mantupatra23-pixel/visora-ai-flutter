@@ -1,12 +1,15 @@
-// ⚙️ Visora AI Cloud — Fully Stable Flutter Gradle Configuration (FINAL FIX)
+// ⚙️ Visora AI Cloud – Final Stable Build (Flutter 3.19+ and Gradle 8.7 Compatible)
 
 pluginManagement {
     repositories {
         google()
         mavenCentral()
         gradlePluginPortal()
-        // Flutter Gradle repository for plugin resolution
+        // Add Flutter repository
         maven { url "https://storage.googleapis.com/download.flutter.io" }
+    }
+    plugins {
+        id "dev.flutter.flutter-gradle-plugin" version "1.0.0" apply false
     }
 }
 
@@ -23,34 +26,49 @@ dependencyResolutionManagement {
 rootProject.name = "visora_ai_flutter"
 include(":app")
 
-// ✅ Detect Flutter SDK Path (local + cloud)
+// ✅ Detect Flutter SDK path
 def flutterSdkPath = System.getenv("FLUTTER_HOME") ?: "../../.."
 if (flutterSdkPath && new File(flutterSdkPath).exists()) {
     println("✅ Flutter SDK found at: $flutterSdkPath")
-    apply from: "$flutterSdkPath/packages/flutter_tools/gradle/app_plugin_loader.gradle"
+    includeBuild(flutterSdkPath)
 } else {
-    println("⚠️ Flutter SDK not found — trying default relative path...")
-    apply from: "../../packages/flutter_tools/gradle/app_plugin_loader.gradle"
+    println("⚠️ Flutter SDK not found, using default runner SDK.")
 }
 
-// ✅ Auto-include Flutter plugins
+// ✅ Safe parse .flutter-plugins-dependencies (supports Flutter 3.19 JSON map)
+import groovy.json.JsonSlurper
+
 def flutterPluginsFile = new File(rootDir, "../.flutter-plugins-dependencies")
 if (flutterPluginsFile.exists()) {
-    println("✅ Found plugin dependency file: ${flutterPluginsFile}")
+    println("✅ Found Flutter plugin dependency file at ${flutterPluginsFile}")
     try {
-        def json = new groovy.json.JsonSlurper().parseText(flutterPluginsFile.text)
-        json.plugins.each { plugin ->
-            def name = plugin.name
-            def path = plugin.path
-            if (path && new File(path).exists()) {
-                include(":$name")
-                project(":$name").projectDir = new File(path)
-                println("🔗 Linked plugin: $name")
+        def json = new JsonSlurper().parseText(flutterPluginsFile.text)
+        if (json.values() && json.values().plugins) {
+            json.values().plugins.each { plugin ->
+                def name = plugin.name
+                def path = plugin.path
+                if (path && new File(path).exists()) {
+                    include(":$name")
+                    project(":$name").projectDir = new File(path)
+                    println("🔗 Linked plugin: $name")
+                }
             }
+        } else if (json.plugins) {
+            json.plugins.each { plugin ->
+                def name = plugin.name
+                def path = plugin.path
+                if (path && new File(path).exists()) {
+                    include(":$name")
+                    project(":$name").projectDir = new File(path)
+                    println("🔗 Linked plugin: $name")
+                }
+            }
+        } else {
+            println("⚠️ No valid plugin structure found in JSON.")
         }
     } catch (Exception e) {
-        println("⚠️ Failed to parse .flutter-plugins-dependencies file: ${e.message}")
+        println("⚠️ Failed to parse plugin file: ${e.message}")
     }
 } else {
-    println("⚠️ No plugin dependency file found. Flutter will regenerate automatically.")
+    println("⚠️ .flutter-plugins-dependencies not found. Flutter will regenerate automatically.")
 }
