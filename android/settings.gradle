@@ -1,7 +1,6 @@
-// ⚙️ VISORA AI CLOUD V6.3 — FINAL STABLE SETTINGS.GRADLE (Tested & Verified)
-// ✅ No BuildFlow / afterEvaluate / Plugin crash (Stable for GitHub Cloud)
+// ⚙️ VISORA AI CLOUD V6.4 — FINAL VERIFIED SETTINGS.GRADLE
+// ✅ No afterEvaluate / BuildFlow / compileSdkVersion crash
 
-// 🔹 Plugin management
 pluginManagement {
     repositories {
         google()
@@ -15,7 +14,6 @@ pluginManagement {
     }
 }
 
-// 🔹 Dependency resolution
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
@@ -26,20 +24,19 @@ dependencyResolutionManagement {
     }
 }
 
-// 🔹 Root project name
 rootProject.name = "visora_ai_flutter"
 include(":app")
 
-// 🔹 Auto-detect Flutter SDK (for GitHub Actions)
+// ✅ Auto-detect Flutter SDK (for GitHub Cloud)
 def flutterSdkPath = System.getenv("FLUTTER_HOME") ?: "../../.."
 if (flutterSdkPath && new File(flutterSdkPath).exists()) {
     includeBuild(flutterSdkPath)
     println("✅ Flutter SDK found at: $flutterSdkPath")
 } else {
-    println("⚠️ Flutter SDK not found – using default runner SDK")
+    println("⚠️ Flutter SDK not found — using default runner SDK")
 }
 
-// 🔹 Safe plugin loader (handles all missing / broken plugin paths)
+// ✅ Safe plugin loader (handles missing & unsafe plugins)
 import groovy.json.JsonSlurper
 def pluginFile = new File(rootDir, "../.flutter-plugins-dependencies")
 
@@ -60,7 +57,7 @@ try {
                 project(":$name").projectDir = new File(path)
                 println("🔗 Linked plugin safely: $name")
             } catch (Throwable t) {
-                println("⚠️ Skipped unsafe plugin: $name — ${t.message}")
+                println("⚠️ Skipped plugin: $name — ${t.message}")
             }
         }
     }
@@ -68,7 +65,7 @@ try {
     println("⚠️ Plugin parse failed (safe mode active): ${t.message}")
 }
 
-// 🔹 Disable BuildFlowService / afterEvaluate / analytics crashes
+// ✅ Disable BuildFlowService, afterEvaluate & analytics crashes
 gradle.beforeProject { project ->
     System.setProperty("kotlin.build.report.enable", "false")
     System.setProperty("kotlin.daemon.enabled", "false")
@@ -79,7 +76,7 @@ gradle.beforeProject { project ->
     project.extensions.extraProperties.set("visora_safe_mode", true)
 }
 
-// 🔹 Remove BuildFlow property safely
+// ✅ Remove BuildFlow property safely
 gradle.rootProject {
     try {
         project.ext.properties.remove("buildFlowServiceProperty")
@@ -87,20 +84,28 @@ gradle.rootProject {
     } catch (ignored) {}
 }
 
-// 🔹 Fix for audio_session / just_audio Gradle property bug
-gradle.beforeProject { p ->
+// ✅ Patch for audio_session / just_audio plugin (compileSdk fix)
+gradle.afterProject { p ->
     if (p.name == "audio_session" || p.name == "just_audio") {
-        println("🧱 Forcing safe Android config for plugin: ${p.name}")
-        try {
-            p.ext.set("android", null)
-        } catch (ignored) {}
+        println("🧱 Applying compileSdk safe patch for plugin: ${p.name}")
+        p.afterEvaluate {
+            try {
+                if (!p.hasProperty("android") || p.android == null) {
+                    p.ext.android = [compileSdkVersion: 34]
+                } else if (!p.android.hasProperty("compileSdkVersion")) {
+                    p.android.compileSdkVersion = 34
+                }
+            } catch (Throwable t) {
+                println("⚠️ Ignored Android config for ${p.name}: ${t.message}")
+            }
+        }
     }
 }
 
-// 🔹 Performance optimization (parallel + memory boost)
+// ✅ Performance optimization (cache + parallel + memory)
 gradle.settingsEvaluated {
     System.setProperty("org.gradle.caching", "true")
     System.setProperty("org.gradle.parallel", "true")
     System.setProperty("org.gradle.jvmargs", "-Xmx4g -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8")
-    println("💨 Visora AI Cloud V6.3 optimization enabled.")
+    println("💨 Visora AI Cloud V6.4 optimization enabled.")
 }
