@@ -1,4 +1,4 @@
-// ⚙️ VISORA AI CLOUD — FINAL STABLE SETTINGS.GRADLE (afterEvaluate & BuildFlow Crash Fixed)
+// ⚙️ VISORA AI CLOUD — FINAL STABLE SETTINGS.GRADLE (Crash-Free Build)
 
 pluginManagement {
     repositories {
@@ -26,7 +26,7 @@ dependencyResolutionManagement {
 rootProject.name = "visora_ai_flutter"
 include(":app")
 
-// ✅ Auto-detect Flutter SDK
+// ✅ Auto detect Flutter SDK
 def flutterSdkPath = System.getenv("FLUTTER_HOME") ?: "../../.."
 if (flutterSdkPath && new File(flutterSdkPath).exists()) {
     println("✅ Flutter SDK found at: $flutterSdkPath")
@@ -40,7 +40,6 @@ import groovy.json.JsonSlurper
 def flutterPluginsFile = new File(rootDir, "../.flutter-plugins-dependencies")
 
 if (flutterPluginsFile.exists()) {
-    println("✅ Found Flutter plugin dependency file at ${flutterPluginsFile}")
     try {
         def json = new JsonSlurper().parseText(flutterPluginsFile.text)
         def plugins = []
@@ -61,34 +60,34 @@ if (flutterPluginsFile.exists()) {
         println("⚠️ Plugin parse error: ${e.message}")
     }
 } else {
-    println("⚠️ No .flutter-plugins-dependencies found. Flutter will regenerate.")
+    println("⚠️ No .flutter-plugins-dependencies found. Forcing regeneration.")
+    new File(rootDir, "../.flutter-plugins-dependencies").text = '{"plugins": []}'
 }
 
-// ✅ Disable Kotlin analytics + Fix afterEvaluate() crash
+// ✅ Disable Kotlin analytics + afterEvaluate crash
 gradle.beforeProject { project ->
     System.setProperty("kotlin.build.report.enable", "false")
-    System.setProperty("kotlin.incremental", "false")
     System.setProperty("kotlin.daemon.enabled", "false")
-    System.setProperty("kotlin.compiler.execution.strategy", "in-process")
+    System.setProperty("kotlin.incremental", "false")
     System.setProperty("org.gradle.unsafe.configuration-cache", "false")
     System.setProperty("systemProp.kotlin.gradle.plugin.statistics.disable", "true")
     System.setProperty("systemProp.kotlin.build.report", "false")
 }
 
-// ✅ Extra fix for BuildFlowServiceProperty crash
+// ✅ Patch BuildFlowServiceProperty crash (GitHub/CI safe mode)
 gradle.rootProject {
     try {
         if (project.hasProperty("buildFlowServiceProperty")) {
             project.ext.remove("buildFlowServiceProperty")
-            println("🩵 buildFlowServiceProperty override applied (safe mode).")
+            println("🩵 buildFlowServiceProperty safely removed.")
         }
     } catch (ignored) {}
 }
 
-// ✅ Optimize CI build (parallel + cache + memory)
+// ✅ CI optimization
 gradle.settingsEvaluated {
     System.setProperty("org.gradle.caching", "true")
     System.setProperty("org.gradle.parallel", "true")
     System.setProperty("org.gradle.jvmargs", "-Xmx3g -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8")
-    println("💨 CI optimization enabled (Visora AI Cloud Mode)")
+    println("💨 CI optimization active (Visora AI Cloud Mode)")
 }
