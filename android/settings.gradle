@@ -1,3 +1,7 @@
+// 🩵 Kotlin analytics disable (Fix buildFlowService crash)
+System.setProperty("kotlin.build.report.enable", "false")
+System.setProperty("kotlin.daemon.enabled", "false")
+
 // ⚙️ VISORA AI CLOUD – FINAL STABLE GRADLE FIX (No More afterEvaluate Crash)
 
 pluginManagement {
