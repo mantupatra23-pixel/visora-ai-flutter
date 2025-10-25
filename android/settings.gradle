@@ -32,7 +32,7 @@ if (flutterSdkPath && new File(flutterSdkPath).exists()) {
     println("✅ Flutter SDK found at: $flutterSdkPath")
     includeBuild(flutterSdkPath)
 } else {
-    println("⚠️ Flutter SDK not found — using pre-installed runner SDK.")
+    println("⚠️ Flutter SDK not found – using pre-installed runner SDK.")
 }
 
 // ✅ Safe plugin loader (Handles Flutter 3.19 JSON format)
