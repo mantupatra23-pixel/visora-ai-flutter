@@ -12,7 +12,8 @@ dependencies:
 
   # 🌐 HTTP / Cloud Requests
   cupertino_icons: ^1.0.8
-  http: ^1.2.1
+  http: ^0.13.6
+  translator: ^0.1.5
   dio: ^5.4.3
 
   # 📁 File Management
