@@ -1,13 +1,15 @@
 buildscript {
     ext.kotlin_version = '1.9.25'
+
     repositories {
         google()
         mavenCentral()
         gradlePluginPortal()
     }
+
     dependencies {
         classpath 'com.android.tools.build:gradle:8.5.2'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.25"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath 'com.google.gms:google-services:4.4.2'
     }
 }
@@ -22,7 +24,7 @@ allprojects {
 
 rootProject.buildDir = '../build'
 
-// ✅ EARLY FIX — apply SDK + namespace before evaluation
+/* ✅ Early Fix: Apply SDK + Namespace before evaluation */
 gradle.beforeProject { project ->
     if (project.hasProperty("android")) {
         project.android {
@@ -36,11 +38,11 @@ gradle.beforeProject { project ->
     }
 }
 
+/* ✅ Kotlin Setup for Modern Cloud Builds */
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
     project.evaluationDependsOn(':app')
 
-    // ✅ Kotlin setup
     tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
         kotlinOptions {
             jvmTarget = '17'
@@ -51,6 +53,7 @@ subprojects {
     }
 }
 
+/* ✅ Clean Task */
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
