@@ -1,5 +1,11 @@
 buildscript {
     ext.kotlin_version = '1.9.25'
+    ext {
+        compileSdkVersion = 35
+        targetSdkVersion = 35
+        minSdkVersion = 23
+    }
+
     repositories {
         google()
         mavenCentral()
@@ -22,36 +28,34 @@ allprojects {
 
 rootProject.buildDir = '../build'
 
-/* ✅ Early Fix: Apply SDK + Namespace before evaluation */
-gradle.beforeProject { project ->
-    if (project.hasProperty("android")) {
-        project.android {
-            if (!project.hasProperty("compileSdkVersion")) {
-                compileSdkVersion 35
-            }
-            if (!project.hasProperty("namespace")) {
-                namespace = "com.example.visora_ai_flutter"
+/* ✅ Apply SDK + Namespace fix globally */
+subprojects {
+    afterEvaluate { project ->
+        if (project.hasProperty("android")) {
+            project.android {
+                if (!project.hasProperty("compileSdkVersion")) {
+                    compileSdkVersion = rootProject.ext.compileSdkVersion
+                }
+                if (!project.hasProperty("namespace")) {
+                    namespace = "com.example.visora_ai_flutter"
+                }
             }
         }
     }
 }
 
-/* ✅ Kotlin Setup for Modern Cloud Builds */
+/* ✅ Kotlin setup for all submodules */
 subprojects {
-    project.buildDir = "${rootProject.buildDir}/${project.name}"
-    project.evaluationDependsOn(':app')
-
     tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
         kotlinOptions {
             jvmTarget = '17'
             apiVersion = '1.9'
             languageVersion = '1.9'
-            freeCompilerArgs += ['-Xskip-metadata-version-check']
         }
     }
 }
 
-/* ✅ Clean Task */
+/* ✅ Clean task */
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
