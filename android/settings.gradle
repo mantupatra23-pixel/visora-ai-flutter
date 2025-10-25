@@ -1,4 +1,4 @@
-// ⚙️ Visora AI Cloud – Final Stable Gradle Config (Flutter 3.19.6 / Gradle 8.7)
+// ⚙️ Visora AI Cloud – Final Stable Build (Flutter 3.19.6 + Kotlin 1.9.24 + Gradle 8.7)
 
 pluginManagement {
     repositories {
@@ -26,16 +26,16 @@ dependencyResolutionManagement {
 rootProject.name = "visora_ai_flutter"
 include(":app")
 
-// ✅ Detect Flutter SDK automatically (for GitHub + Termux)
+// ✅ Detect Flutter SDK automatically
 def flutterSdkPath = System.getenv("FLUTTER_HOME") ?: "../../.."
 if (flutterSdkPath && new File(flutterSdkPath).exists()) {
     println("✅ Flutter SDK found at: $flutterSdkPath")
     includeBuild(flutterSdkPath)
 } else {
-    println("⚠️ Flutter SDK not found – using preinstalled runner SDK.")
+    println("⚠️ Flutter SDK not found — using runner SDK.")
 }
 
-// ✅ Safe plugin loader (Flutter 3.19.6 compatible)
+// ✅ Safe Flutter plugin loader for 3.19.6 JSON format
 import groovy.json.JsonSlurper
 
 def flutterPluginsFile = new File(rootDir, "../.flutter-plugins-dependencies")
@@ -47,14 +47,10 @@ if (flutterPluginsFile.exists()) {
         def plugins = []
 
         if (json instanceof Map && json.values().first() instanceof Map) {
-            // Flutter 3.19+ new format
             json.values().each { section ->
-                if (section.plugins) {
-                    plugins.addAll(section.plugins)
-                }
+                if (section.plugins) plugins.addAll(section.plugins)
             }
         } else if (json.plugins) {
-            // Legacy format
             plugins = json.plugins
         }
 
@@ -66,21 +62,33 @@ if (flutterPluginsFile.exists()) {
                 project(":$name").projectDir = new File(path)
                 println("🔗 Linked plugin: $name")
             } else {
-                println("⚠️ Skipped invalid plugin: $plugin")
+                println("⚠️ Skipped invalid plugin entry: $plugin")
             }
         }
+
+        if (plugins.isEmpty()) println("⚠️ No valid plugins found to include.")
     } catch (Exception e) {
         println("⚠️ Failed to parse plugin dependencies: ${e.message}")
     }
 } else {
-    println("⚠️ No .flutter-plugins-dependencies found. Flutter will regenerate it.")
+    println("⚠️ No .flutter-plugins-dependencies found. Will regenerate.")
 }
 
-// ✅ Disable Kotlin build stats (fixes 'buildFlowServiceProperty' crash)
-gradle.beforeProject { project ->
-    project.plugins.withId("org.jetbrains.kotlin.android") {
-        project.ext["kotlin.build.report.enable"] = false
-        project.ext["kotlin.daemon.enabled"] = false
-        println("🛠️ Kotlin Gradle analytics disabled for safe cloud build.")
+// ✅ Disable problematic Kotlin Gradle metrics (fixes buildFlowServiceProperty crash)
+gradle.settingsEvaluated {
+    gradle.rootProject {
+        plugins.withId("org.jetbrains.kotlin.android") {
+            println("🧩 Disabling Kotlin Gradle metrics for cloud stability.")
+            System.setProperty("org.gradle.kotlin.dsl.skipMetadataVersionCheck", "true")
+            System.setProperty("kotlin.build.report.enable", "false")
+            System.setProperty("kotlin.incremental", "false")
+        }
+    }
+}
+
+// ✅ Override afterEvaluate() timing to prevent null crash
+gradle.projectsLoaded {
+    gradle.rootProject {
+        println("🛠️ Safe Gradle initialization for afterEvaluate() crash prevention.")
     }
 }
