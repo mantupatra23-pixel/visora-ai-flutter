@@ -1,4 +1,4 @@
-name: ☁️ Visora AI Cloud v3 – Auto-Healing Build & Release APK
+name: ☁️ Visora AI Cloud V3 — Auto-Healing Flutter Build
 
 on:
   push:
@@ -11,17 +11,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🧠 Checkout Repository
+      # ✅ Step 1 — Checkout Repo
+      - name: 📦 Checkout Repository
         uses: actions/checkout@v4
 
-      - name: 🧰 Setup Flutter
+      # ✅ Step 2 — Setup Flutter
+      - name: 🧠 Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.24.0"  # ✅ Updated to latest stable (Fix for SDK mismatch)
+          flutter-version: "3.19.6"
 
-      - name: 🔧 Auto-Heal Gradle Config
+      # ✅ Step 3 — Auto-Heal Gradle & SDK
+      - name: 🩺 Auto-Heal Gradle Config
         run: |
-          echo "⚙️ Applying Gradle Auto-Heal Fix..."
+          echo "🩹 Healing Gradle & SDK Configurations..."
           cat > android/build.gradle <<'EOF'
           buildscript {
               ext.kotlin_version = '1.9.25'
@@ -32,7 +35,7 @@ jobs:
               }
               dependencies {
                   classpath 'com.android.tools.build:gradle:8.5.2'
-                  classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+                  classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.25"
                   classpath 'com.google.gms:google-services:4.4.2'
               }
           }
@@ -45,28 +48,29 @@ jobs:
               }
           }
 
-          rootProject.buildDir = "../build"
-
-          // ✅ EARLY EVALUATION FIX
+          rootProject.buildDir = '../build'
           gradle.beforeProject { project ->
               if (project.hasProperty("android")) {
                   project.android {
-                      if (!project.hasProperty("compileSdkVersion")) compileSdkVersion 35
-                      if (!project.hasProperty("namespace")) namespace = "com.example.visora_ai_flutter"
+                      if (!project.hasProperty("compileSdkVersion")) {
+                          compileSdkVersion 35
+                      }
+                      if (!project.hasProperty("namespace")) {
+                          namespace = "com.example.visora_ai_flutter"
+                      }
                   }
               }
           }
 
           subprojects {
               project.buildDir = "${rootProject.buildDir}/${project.name}"
-              project.evaluationDependsOn(":app")
-
-              tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+              project.evaluationDependsOn(':app')
+              tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
                   kotlinOptions {
-                      jvmTarget = "17"
-                      apiVersion = "1.9"
-                      languageVersion = "1.9"
-                      freeCompilerArgs += ["-Xskip-metadata-version-check"]
+                      jvmTarget = '17'
+                      apiVersion = '1.9'
+                      languageVersion = '1.9'
+                      freeCompilerArgs = ['-Xskip-metadata-version-check']
                   }
               }
           }
@@ -75,22 +79,45 @@ jobs:
               delete rootProject.buildDir
           }
           EOF
-          echo "✅ Gradle Auto-Heal Complete!"
 
+          echo "🧾 Setting Android SDK Versions..."
+          echo -e "\nflutter.minSdkVersion=23\nflutter.targetSdkVersion=35\nflutter.compileSdkVersion=35" >> android/gradle.properties
+
+          echo "⚙️ Creating MainActivity.kt (V2 Embedding)..."
+          mkdir -p android/app/src/main/kotlin/com/example/visora_ai_flutter
+          cat > android/app/src/main/kotlin/com/example/visora_ai_flutter/MainActivity.kt <<EOL
+          package com.example.visora_ai_flutter
+
+          import io.flutter.embedding.android.FlutterActivity
+
+          class MainActivity: FlutterActivity() {
+          }
+          EOL
+
+          echo "🧹 Cleaning old Manifest activities..."
+          sed -i '/<activity/,/<\/activity>/d' android/app/src/main/AndroidManifest.xml
+
+          echo "✅ Auto-Heal complete!"
+
+      # ✅ Step 4 — Flutter Pub Get
       - name: 📦 Flutter Pub Get
         run: flutter pub get
 
+      # ✅ Step 5 — Setup Google Services JSON (Firebase)
+        # (only if you’re using Firebase; can skip otherwise)
       - name: 🔑 Setup Google Services
         run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > android/app/google-services.json
 
+      # ✅ Step 6 — Build Release APK
       - name: 🚀 Build Release APK
         run: |
-          echo "🏗️ Building Visora AI Release APK..."
+          echo "🚀 Building Visora AI Cloud Release APK..."
           flutter build apk --release
           echo "✅ Build Completed Successfully!"
 
+      # ✅ Step 7 — Upload Artifact to GitHub
       - name: ☁️ Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Visora-AI-Cloud-Build
+          name: VisoraAI-Cloud-Release
           path: build/app/outputs/flutter-apk/app-release.apk
