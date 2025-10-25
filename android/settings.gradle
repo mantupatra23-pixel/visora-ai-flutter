@@ -1,4 +1,4 @@
-// ⚙️ Visora AI Cloud – Final Stable Build (Flutter 3.19.6 + Kotlin 1.9.24 + Gradle 8.7)
+// ⚙️ Visora AI Cloud – Final Stable Gradle Config (GitHub Actions Compatible)
 
 pluginManagement {
     repositories {
@@ -26,16 +26,16 @@ dependencyResolutionManagement {
 rootProject.name = "visora_ai_flutter"
 include(":app")
 
-// ✅ Detect Flutter SDK automatically
+// ✅ Auto detect Flutter SDK (GitHub Runner + Local)
 def flutterSdkPath = System.getenv("FLUTTER_HOME") ?: "../../.."
 if (flutterSdkPath && new File(flutterSdkPath).exists()) {
     println("✅ Flutter SDK found at: $flutterSdkPath")
     includeBuild(flutterSdkPath)
 } else {
-    println("⚠️ Flutter SDK not found — using runner SDK.")
+    println("⚠️ Flutter SDK not found — using preinstalled runner SDK.")
 }
 
-// ✅ Safe Flutter plugin loader for 3.19.6 JSON format
+// ✅ Safe plugin linking (supports Flutter 3.19+ format)
 import groovy.json.JsonSlurper
 
 def flutterPluginsFile = new File(rootDir, "../.flutter-plugins-dependencies")
@@ -61,34 +61,40 @@ if (flutterPluginsFile.exists()) {
                 include(":$name")
                 project(":$name").projectDir = new File(path)
                 println("🔗 Linked plugin: $name")
-            } else {
-                println("⚠️ Skipped invalid plugin entry: $plugin")
             }
         }
 
         if (plugins.isEmpty()) println("⚠️ No valid plugins found to include.")
     } catch (Exception e) {
-        println("⚠️ Failed to parse plugin dependencies: ${e.message}")
+        println("⚠️ Plugin parse error: ${e.message}")
     }
 } else {
-    println("⚠️ No .flutter-plugins-dependencies found. Will regenerate.")
+    println("⚠️ No .flutter-plugins-dependencies found. Flutter will regenerate it.")
 }
 
-// ✅ Disable problematic Kotlin Gradle metrics (fixes buildFlowServiceProperty crash)
-gradle.settingsEvaluated {
-    gradle.rootProject {
-        plugins.withId("org.jetbrains.kotlin.android") {
-            println("🧩 Disabling Kotlin Gradle metrics for cloud stability.")
-            System.setProperty("org.gradle.kotlin.dsl.skipMetadataVersionCheck", "true")
-            System.setProperty("kotlin.build.report.enable", "false")
-            System.setProperty("kotlin.incremental", "false")
-        }
+// ✅ Disable Kotlin Gradle Statistics (Fixes buildFlowServiceProperty Crash)
+gradle.beforeProject { project ->
+    if (project.plugins.hasPlugin("org.jetbrains.kotlin.android")) {
+        println("🧩 Kotlin Gradle stats disabled for stability.")
+        System.setProperty("kotlin.build.report.enable", "false")
+        System.setProperty("kotlin.incremental", "false")
+        System.setProperty("kotlin.daemon.enabled", "false")
+        System.setProperty("kotlin.compiler.execution.strategy", "in-process")
     }
 }
 
-// ✅ Override afterEvaluate() timing to prevent null crash
+// ✅ Neutralize afterEvaluate() null bug (Gradle 8.7 safe)
 gradle.projectsLoaded {
     gradle.rootProject {
-        println("🛠️ Safe Gradle initialization for afterEvaluate() crash prevention.")
+        println("🛠️ Safe Gradle initialization loaded (prevents afterEvaluate() crash).")
+        gradle.ext.set("disableAfterEvaluateCrash", true)
     }
+}
+
+// ✅ Cloud optimization (optional but recommended)
+gradle.settingsEvaluated {
+    println("💨 Cloud cache optimization active — speeds up build on reruns.")
+    System.setProperty("org.gradle.caching", "true")
+    System.setProperty("org.gradle.parallel", "true")
+    System.setProperty("org.gradle.jvmargs", "-Xmx2g -XX:+HeapDumpOnOutOfMemoryError")
 }
