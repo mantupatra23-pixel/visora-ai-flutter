@@ -1,17 +1,23 @@
-// ⚙️ Visora AI – Force Include Flutter Gradle Plugin (Fix for Cloud Build)
-def flutterSdkPath = System.getenv("FLUTTER_HOME") ?: "../../.."
-apply from: "$flutterSdkPath/packages/flutter_tools/gradle/flutter.gradle"
-
+// ⚙️ Visora AI — Stable Cloud Build Configuration (Final)
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
     id 'com.google.gms.google-services'
-    id 'dev.flutter.flutter-gradle-plugin'
 }
 
+// ✅ Auto-detect Flutter SDK Path for both Cloud and Local builds
+def flutterSdkPath = System.getenv("FLUTTER_HOME") ?: "../../.."
+if (flutterSdkPath && new File(flutterSdkPath).exists()) {
+    apply from: "$flutterSdkPath/packages/flutter_tools/gradle/flutter.gradle"
+} else {
+    println("⚠️ Flutter SDK not found, using fallback relative path.")
+    apply from: "../../packages/flutter_tools/gradle/flutter.gradle"
+}
+
+// ✅ Android Configuration
 android {
     namespace "com.example.visora_ai_flutter"
-    compileSdk 35 // ⚡ Direct fixed value for Cloud stability
+    compileSdk 35
 
     defaultConfig {
         applicationId "com.example.visora_ai_flutter"
@@ -27,7 +33,7 @@ android {
             signingConfig signingConfigs.debug
             minifyEnabled false
             shrinkResources false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
             minifyEnabled false
@@ -50,10 +56,12 @@ android {
     }
 }
 
+// ✅ Flutter Plugin Reference
 flutter {
     source '../..'
 }
 
+// ✅ Dependencies
 dependencies {
     implementation platform('com.google.firebase:firebase-bom:33.4.0')
     implementation 'com.google.firebase:firebase-analytics'
