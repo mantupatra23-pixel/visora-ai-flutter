@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ✅ Step 1 – Checkout Repo
+      # ✅ Step 1 – Checkout Repository
       - name: 📦 Checkout Repository
         uses: actions/checkout@v4
 
@@ -21,7 +21,7 @@ jobs:
         with:
           flutter-version: "3.19.6"
 
-      # ✅ Step 3 – Export Flutter Home Path (Cloud Fix)
+      # ✅ Step 3 – Export Flutter Home (for GitHub Cloud)
       - name: ⚙️ Export Flutter Home
         run: echo "FLUTTER_HOME=$(which flutter | sed 's/\/bin\/flutter//')" >> $GITHUB_ENV
 
@@ -34,10 +34,17 @@ jobs:
           flutter pub get
           echo "✅ Dependencies synced successfully!"
 
-      # ✅ Step 5 – Recreate Android Folder if Broken
+      # ✅ Step 5 – Recreate Android Folder (Fix Gradle Issue)
       - name: 🛠 Recreate Android folder (fix gradle issue)
         run: |
-          flutter create --platforms=android --project-name visora_ai_flutter
+          echo "🧩 Checking Android directory..."
+          if [ ! -d "android" ]; then
+            echo "⚙️ Android folder missing — recreating now..."
+            flutter create .
+            echo "✅ Android folder recreated successfully."
+          else
+            echo "✅ Android folder already exists, skipping recreate."
+          fi
           flutter pub get
 
       # ✅ Step 6 – Flutter Pub Get
