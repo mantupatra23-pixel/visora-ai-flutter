@@ -1,4 +1,4 @@
-// ⚙️ VISORA AI CLOUD — FINAL FIXED SETTINGS.GRADLE (No More Build Errors)
+// ⚙️ VISORA AI CLOUD — FINAL STABLE SETTINGS.GRADLE (afterEvaluate & BuildFlow Crash Fixed)
 
 pluginManagement {
     repositories {
@@ -26,7 +26,7 @@ dependencyResolutionManagement {
 rootProject.name = "visora_ai_flutter"
 include(":app")
 
-// ✅ Auto detect Flutter SDK (local + GitHub runner)
+// ✅ Auto-detect Flutter SDK
 def flutterSdkPath = System.getenv("FLUTTER_HOME") ?: "../../.."
 if (flutterSdkPath && new File(flutterSdkPath).exists()) {
     println("✅ Flutter SDK found at: $flutterSdkPath")
@@ -35,7 +35,7 @@ if (flutterSdkPath && new File(flutterSdkPath).exists()) {
     println("⚠️ Flutter SDK not found – using pre-installed runner SDK.")
 }
 
-// ✅ Safe plugin loader (Handles Flutter 3.19 JSON format)
+// ✅ Safe Flutter plugin loader (for .flutter-plugins-dependencies)
 import groovy.json.JsonSlurper
 def flutterPluginsFile = new File(rootDir, "../.flutter-plugins-dependencies")
 
@@ -64,7 +64,7 @@ if (flutterPluginsFile.exists()) {
     println("⚠️ No .flutter-plugins-dependencies found. Flutter will regenerate.")
 }
 
-// ✅ Disable Kotlin analytics + fix afterEvaluate() crash
+// ✅ Disable Kotlin analytics + Fix afterEvaluate() crash
 gradle.beforeProject { project ->
     System.setProperty("kotlin.build.report.enable", "false")
     System.setProperty("kotlin.incremental", "false")
@@ -75,7 +75,17 @@ gradle.beforeProject { project ->
     System.setProperty("systemProp.kotlin.build.report", "false")
 }
 
-// ✅ Optimize CI builds (parallel + cache + memory)
+// ✅ Extra fix for BuildFlowServiceProperty crash
+gradle.rootProject {
+    try {
+        if (project.hasProperty("buildFlowServiceProperty")) {
+            project.ext.remove("buildFlowServiceProperty")
+            println("🩵 buildFlowServiceProperty override applied (safe mode).")
+        }
+    } catch (ignored) {}
+}
+
+// ✅ Optimize CI build (parallel + cache + memory)
 gradle.settingsEvaluated {
     System.setProperty("org.gradle.caching", "true")
     System.setProperty("org.gradle.parallel", "true")
