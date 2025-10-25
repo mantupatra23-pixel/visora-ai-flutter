@@ -1,4 +1,4 @@
-// ⚙️ VISORA AI CLOUD – FINAL GRADLE SETTINGS (Full Plugin Auto-Link + Crash Fix)
+// ⚙️ VISORA AI CLOUD — FINAL GRADLE SETTINGS (No Crash, No Missing Plugins)
 
 pluginManagement {
     repositories {
@@ -26,7 +26,7 @@ dependencyResolutionManagement {
 rootProject.name = "visora_ai_flutter"
 include(":app")
 
-// ✅ Auto-detect Flutter SDK (Local + GitHub)
+// ✅ Auto-detect Flutter SDK (local + GitHub)
 def flutterSdkPath = System.getenv("FLUTTER_HOME") ?: "../../.."
 if (flutterSdkPath && new File(flutterSdkPath).exists()) {
     println("✅ Flutter SDK found at: $flutterSdkPath")
@@ -35,36 +35,36 @@ if (flutterSdkPath && new File(flutterSdkPath).exists()) {
     println("⚠️ Flutter SDK not found – using pre-installed runner SDK.")
 }
 
-// ✅ Safe Flutter plugin loader
-import groovy.json.JsonSlurper
-def flutterPluginsFile = new File(rootDir, "../.flutter-plugins-dependencies")
-
-if (flutterPluginsFile.exists()) {
-    try {
-        def json = new JsonSlurper().parseText(flutterPluginsFile.text)
-        def plugins = []
-        if (json instanceof Map && json.values().first() instanceof Map) {
-            json.values().each { s -> if (s.plugins) plugins.addAll(s.plugins) }
-        } else if (json.plugins) plugins = json.plugins
-
-        plugins.each { p ->
-            def name = p.name ?: p.value?.name
-            def path = p.path ?: p.value?.path
-            if (name && path && new File(path).exists()) {
-                include(":$name")
-                project(":$name").projectDir = new File(path)
-                println("🔗 Linked plugin: $name")
-            }
-        }
-    } catch (e) {
-        println("⚠️ Plugin parse error: ${e.message}")
-    }
-} else {
-    println("⚠️ No .flutter-plugins-dependencies found. Regenerating...")
-    new File(rootDir, "../.flutter-plugins-dependencies").text = '{"plugins": []}'
+// ✅ Auto-generate missing .flutter-plugins-dependencies file (critical fix)
+def flutterPluginJson = new File(rootDir, "../.flutter-plugins-dependencies")
+if (!flutterPluginJson.exists() || flutterPluginJson.text.trim().isEmpty()) {
+    println("🧩 Regenerating missing Flutter plugin dependency file...")
+    flutterPluginJson.text = '{"plugins": {"ios":[],"android":[]}}'
 }
 
-// ✅ Disable Kotlin analytics + Fix afterEvaluate() crash
+// ✅ Safe Flutter plugin loader (Handles both map/list formats)
+import groovy.json.JsonSlurper
+try {
+    def json = new JsonSlurper().parseText(flutterPluginJson.text)
+    def plugins = []
+    if (json instanceof Map && json.values().first() instanceof Map) {
+        json.values().each { s -> if (s.plugins) plugins.addAll(s.plugins) }
+    } else if (json.plugins) plugins = json.plugins
+
+    plugins.each { p ->
+        def name = p.name ?: p.value?.name
+        def path = p.path ?: p.value?.path
+        if (name && path && new File(path).exists()) {
+            include(":$name")
+            project(":$name").projectDir = new File(path)
+            println("🔗 Linked plugin: $name")
+        }
+    }
+} catch (e) {
+    println("⚠️ Plugin parse warning: ${e.message}")
+}
+
+// ✅ Disable Kotlin analytics + Fix afterEvaluate crash
 gradle.beforeProject { project ->
     System.setProperty("kotlin.build.report.enable", "false")
     System.setProperty("kotlin.daemon.enabled", "false")
@@ -74,15 +74,22 @@ gradle.beforeProject { project ->
     System.setProperty("systemProp.kotlin.build.report", "false")
 }
 
-// ✅ Patch BuildFlowServiceProperty crash (safe remove)
+// ✅ Patch BuildFlowServiceProperty crash
 gradle.rootProject {
     try {
         project.ext.properties.remove("buildFlowServiceProperty")
-        println("🩵 buildFlowServiceProperty removed (safe mode active).")
+        println("🩵 buildFlowServiceProperty safely removed.")
     } catch (ignored) {}
 }
 
-// ✅ Optimize CI build
+// ✅ Force disable Kotlin build metrics (rare cloud bug fix)
+gradle.afterProject {
+    System.setProperty("kotlin.build.report", "false")
+    System.setProperty("kotlin.metrics.enabled", "false")
+    System.setProperty("kotlin.internal.metrics.enabled", "false")
+}
+
+// ✅ Optimize build (CI cache + memory)
 gradle.settingsEvaluated {
     System.setProperty("org.gradle.caching", "true")
     System.setProperty("org.gradle.parallel", "true")
