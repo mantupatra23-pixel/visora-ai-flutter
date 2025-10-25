@@ -23,8 +23,8 @@ android {
             signingConfig signingConfigs.debug
             minifyEnabled false
             shrinkResources false
-            // 👇 ensure karega Firebase aur Kotlin libs obfuscate na ho
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
+            // Prevent Firebase and Kotlin libs from being obfuscated
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
             minifyEnabled false
@@ -52,7 +52,7 @@ flutter {
 }
 
 dependencies {
-    // ✅ Firebase BOM for version management
+    // ✅ Firebase BOM (automatic version sync for all Firebase libs)
     implementation platform('com.google.firebase:firebase-bom:33.4.0')
 
     // 🔥 Firebase modules
@@ -62,7 +62,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-storage'
     implementation 'com.google.firebase:firebase-crashlytics'
 
-    // 🧩 AndroidX + MultiDex support
+    // ☘ AndroidX + MultiDex
     implementation 'androidx.core:core-ktx:1.13.1'
     implementation 'androidx.multidex:multidex:2.0.1'
 }
