@@ -1,4 +1,4 @@
-name: Build & Auto-Release Signed APK (Cloud)
+name: ☁️ Visora AI Cloud V4 — Fully Automatic Flutter Build
 
 on:
   push:
@@ -11,43 +11,64 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      # ✅ Step 1 — Checkout Repo
+      - name: 📦 Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Flutter
+      # ✅ Step 2 — Setup Flutter
+      - name: 🧠 Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.19.6"
 
-      - name: Auto Fix Dependency Versions
+      # ✅ Step 3 — Auto-Fix Dependencies
+      - name: 🔧 Auto Fix Dependency Versions
         run: |
-          echo "🔧 Auto fixing dependency versions..."
-          flutter pub upgrade --major-versions || true
+          echo "🔍 Checking and fixing dependencies..."
           flutter pub outdated || true
-          flutter pub get || true
+          sed -i 's/translator: .*/translator: ^0.1.7/' pubspec.yaml
+          flutter pub get
           echo "✅ Dependency versions synced successfully!"
 
-      - name: Recreate Android folder (fix gradle issue)
+      # ✅ Step 4 — Recreate Android Folder if Broken
+      - name: 🛠 Recreate Android folder (fix gradle issue)
         run: |
           flutter create --platforms=android --project-name visora_ai_flutter .
-          echo "✅ Android folder recreated successfully!"
+          flutter pub get
 
-      - name: Flutter pub get
+      # ✅ Step 5 — Flutter Pub Get
+      - name: 📦 Flutter pub get
         run: flutter pub get
 
-      - name: Create google-services.json from secret
-        run: echo "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
-        env:
-          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+      # ✅ Step 6 — Create Google Services JSON (Firebase)
+      - name: 🔑 Create google-services.json from secret
+        run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > android/app/google-services.json
 
-      - name: Build Release APK
+      # ✅ Step 7 — Build Release APK
+      - name: 🚀 Build Release APK
         run: |
-          echo "🚀 Building release APK..."
+          echo "🚀 Building Visora AI Cloud Release APK..."
           flutter build apk --release
-          echo "✅ APK Build completed successfully!"
+          echo "✅ Build Completed Successfully!"
 
-      - name: Upload APK Artifact
+      # ✅ Step 8 — Upload Artifact to GitHub
+      - name: ☁️ Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Visora-AI-APK
+          name: VisoraAI-Cloud-Release
           path: build/app/outputs/flutter-apk/app-release.apk
+
+      # ✅ Step 9 — Auto Release to GitHub (Downloadable APK)
+      - name: 📦 Publish to GitHub Releases
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/heads/main')
+        with:
+          files: build/app/outputs/flutter-apk/app-release.apk
+          tag_name: v${{ github.run_number }}
+          name: "Visora AI Cloud Build #${{ github.run_number }}"
+          body: |
+            🚀 Visora AI Cloud Auto Build Successful!
+            ✅ Flutter SDK 3.19.6
+            ✅ Android SDK 35
+            ✅ Auto Dependency Fix
+            ✅ Ready for Download
