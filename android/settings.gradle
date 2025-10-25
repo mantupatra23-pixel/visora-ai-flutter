@@ -1,21 +1,22 @@
-// ⚙️ Visora AI Cloud – Stable Flutter Gradle Configuration (Auto Plugin Detect)
+// ⚙️ Visora AI Cloud – Flutter Gradle Configuration (Final Stable Build)
 
 pluginManagement {
     repositories {
         google()
         mavenCentral()
         gradlePluginPortal()
+        // ✅ Add Flutter plugin repository manually
+        maven { url "https://storage.googleapis.com/download.flutter.io" }
     }
 
-    // ✅ Flutter plugin auto-detect (no version conflict)
+    // ✅ No explicit version, let Flutter handle it dynamically
     plugins {
-        id "dev.flutter.flutter-gradle-plugin"
+        id "dev.flutter.flutter-gradle-plugin" apply false
     }
 }
 
-// 🧠 Dynamically detect Flutter SDK path
+// 🧠 Auto-detect Flutter SDK path for both local & GitHub builds
 def flutterSdkPath = System.getenv("FLUTTER_HOME")
-
 if (flutterSdkPath == null || flutterSdkPath.isEmpty()) {
     try {
         def proc = ["bash", "-c", "which flutter"].execute()
@@ -29,31 +30,37 @@ if (flutterSdkPath == null || flutterSdkPath.isEmpty()) {
     }
 }
 
+// ✅ Print detected path
 if (flutterSdkPath) {
     println("✅ Flutter SDK detected at: $flutterSdkPath")
 } else {
-    println("⚠️ Flutter SDK not found – skipping includeBuild.")
+    println("⚠️ Flutter SDK not found – build will use pre-installed runner SDK.")
 }
 
+// ✅ Include Flutter SDK if valid
 if (flutterSdkPath && new File(flutterSdkPath).exists()) {
     includeBuild(flutterSdkPath)
 }
 
+// ✅ Dependency Management
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
         google()
         mavenCentral()
         gradlePluginPortal()
+        maven { url "https://storage.googleapis.com/download.flutter.io" }
     }
 }
 
+// ✅ Root project
 rootProject.name = "visora_ai_flutter"
 include(":app")
 
+// ✅ Plugin dependency confirmation
 def flutterPluginsFile = new File(rootDir, "../.flutter-plugins-dependencies")
 if (flutterPluginsFile.exists()) {
-    println("✅ Flutter plugin dependencies file found: ${flutterPluginsFile}")
+    println("✅ Flutter plugin dependencies found at: ${flutterPluginsFile}")
 } else {
-    println("⚠️ Flutter plugin dependencies missing, will regenerate automatically.")
+    println("⚠️ Flutter plugin dependencies missing; regenerating automatically.")
 }
