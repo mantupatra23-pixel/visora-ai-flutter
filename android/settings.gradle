@@ -1,8 +1,4 @@
-// 🩵 Kotlin analytics disable (Fix buildFlowService crash)
-System.setProperty("kotlin.build.report.enable", "false")
-System.setProperty("kotlin.daemon.enabled", "false")
-
-// ⚙️ VISORA AI CLOUD – FINAL STABLE GRADLE FIX (No More afterEvaluate Crash)
+// ⚙️ VISORA AI CLOUD — FINAL FIXED SETTINGS.GRADLE (No More Build Errors)
 
 pluginManagement {
     repositories {
@@ -30,7 +26,7 @@ dependencyResolutionManagement {
 rootProject.name = "visora_ai_flutter"
 include(":app")
 
-// ✅ Auto detect Flutter SDK (local + GitHub Runner)
+// ✅ Auto detect Flutter SDK (local + GitHub runner)
 def flutterSdkPath = System.getenv("FLUTTER_HOME") ?: "../../.."
 if (flutterSdkPath && new File(flutterSdkPath).exists()) {
     println("✅ Flutter SDK found at: $flutterSdkPath")
@@ -68,27 +64,21 @@ if (flutterPluginsFile.exists()) {
     println("⚠️ No .flutter-plugins-dependencies found. Flutter will regenerate.")
 }
 
-// ✅ Disable Gradle BuildFlow crash (Kotlin metrics disable)
+// ✅ Disable Kotlin analytics + fix afterEvaluate() crash
 gradle.beforeProject { project ->
     System.setProperty("kotlin.build.report.enable", "false")
     System.setProperty("kotlin.incremental", "false")
     System.setProperty("kotlin.daemon.enabled", "false")
     System.setProperty("kotlin.compiler.execution.strategy", "in-process")
     System.setProperty("org.gradle.unsafe.configuration-cache", "false")
+    System.setProperty("systemProp.kotlin.gradle.plugin.statistics.disable", "true")
+    System.setProperty("systemProp.kotlin.build.report", "false")
 }
 
-// ✅ Patch afterEvaluate() null crash (hook in projectsLoaded)
-gradle.projectsLoaded {
-    println("🛠️ Safe Gradle initialization to bypass afterEvaluate() timing bug.")
-    gradle.rootProject {
-        ext.set("visora_safe_mode", true)
-    }
-}
-
-// ✅ CI Cache optimization (build faster)
+// ✅ Optimize CI builds (parallel + cache + memory)
 gradle.settingsEvaluated {
     System.setProperty("org.gradle.caching", "true")
     System.setProperty("org.gradle.parallel", "true")
-    System.setProperty("org.gradle.jvmargs", "-Xmx3g -XX:+HeapDumpOnOutOfMemoryError")
-    println("💨 Cloud cache optimization active.")
+    System.setProperty("org.gradle.jvmargs", "-Xmx3g -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8")
+    println("💨 CI optimization enabled (Visora AI Cloud Mode)")
 }
