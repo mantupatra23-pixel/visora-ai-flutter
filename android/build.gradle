@@ -1,3 +1,5 @@
+// ⚙️ Visora AI Cloud – Stable Gradle Build Configuration
+
 buildscript {
     ext.kotlin_version = '1.9.25'
 
@@ -14,7 +16,15 @@ buildscript {
     }
 }
 
-/* ✅ Cloud-safe SDK defaults */
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+// ✅ Global Flutter SDK configuration (Cloud-safe)
 ext {
     flutterMinSdkVersion = 23
     flutterTargetSdkVersion = 35
@@ -22,16 +32,18 @@ ext {
     flutterNamespace = "com.example.visora_ai_flutter"
 }
 
-/* ✅ Apply SDK + Namespace for all subprojects (Cloud mode) */
+// ✅ Apply SDK & Namespace for all subprojects (Cloud Mode)
 subprojects {
     afterEvaluate { project ->
         if (project.plugins.hasPlugin("com.android.library") || project.plugins.hasPlugin("com.android.application")) {
             project.android {
                 compileSdkVersion = rootProject.ext.flutterCompileSdkVersion
+
                 defaultConfig {
                     minSdk = rootProject.ext.flutterMinSdkVersion
                     targetSdk = rootProject.ext.flutterTargetSdkVersion
                 }
+
                 if (!project.hasProperty("namespace")) {
                     namespace = rootProject.ext.flutterNamespace
                 }
@@ -40,7 +52,7 @@ subprojects {
     }
 }
 
-/* ✅ Kotlin config for Cloud */
+// ✅ Kotlin Config for Cloud Builds
 subprojects {
     tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
         kotlinOptions {
@@ -52,7 +64,7 @@ subprojects {
     }
 }
 
-/* ✅ Clean task */
+// ✅ Clean Task
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
