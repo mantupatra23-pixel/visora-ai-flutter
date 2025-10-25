@@ -1,16 +1,12 @@
 buildscript {
     ext.kotlin_version = '1.9.25'
-    ext {
-        compileSdkVersion = 35
-        targetSdkVersion = 35
-        minSdkVersion = 23
-    }
 
     repositories {
         google()
         mavenCentral()
         gradlePluginPortal()
     }
+
     dependencies {
         classpath 'com.android.tools.build:gradle:8.5.2'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
@@ -28,29 +24,33 @@ allprojects {
 
 rootProject.buildDir = '../build'
 
-/* ✅ Force SDK + Namespace for all subprojects */
+/* ✅ Global SDK defaults (cloud-safe) */
+ext {
+    flutterMinSdkVersion = 23
+    flutterTargetSdkVersion = 35
+    flutterCompileSdkVersion = 35
+    flutterNamespace = "com.example.visora_ai_flutter"
+}
+
+/* ✅ Apply SDK + Namespace for all subprojects (cloud mode) */
 subprojects {
     afterEvaluate { project ->
-        if (project.plugins.hasPlugin('com.android.library') || project.plugins.hasPlugin('com.android.application')) {
+        if (project.plugins.hasPlugin("com.android.library") || project.plugins.hasPlugin("com.android.application")) {
             project.android {
-                if (!project.hasProperty("compileSdkVersion")) {
-                    compileSdkVersion = rootProject.ext.compileSdkVersion
+                compileSdkVersion = rootProject.ext.flutterCompileSdkVersion
+                defaultConfig {
+                    minSdk = rootProject.ext.flutterMinSdkVersion
+                    targetSdk = rootProject.ext.flutterTargetSdkVersion
                 }
                 if (!project.hasProperty("namespace")) {
-                    namespace = "com.example.visora_ai_flutter"
-                }
-                if (!project.hasProperty("defaultConfig")) {
-                    defaultConfig {
-                        minSdk = rootProject.ext.minSdkVersion
-                        targetSdk = rootProject.ext.targetSdkVersion
-                    }
+                    namespace = rootProject.ext.flutterNamespace
                 }
             }
         }
     }
 }
 
-/* ✅ Kotlin setup for all Gradle submodules */
+/* ✅ Kotlin Config for Cloud */
 subprojects {
     tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
         kotlinOptions {
