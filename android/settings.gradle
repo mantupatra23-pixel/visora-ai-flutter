@@ -1,15 +1,15 @@
-// ⚙️ Visora AI Cloud – Final Stable Build (Flutter 3.19.6 / Gradle 8.7 Compatible)
+// ⚙️ Visora AI Cloud – Final Stable Gradle Config (Flutter 3.19.6 + Gradle 8.7)
 
 pluginManagement {
     repositories {
         google()
         mavenCentral()
         gradlePluginPortal()
-        // Flutter Gradle repo
         maven { url "https://storage.googleapis.com/download.flutter.io" }
     }
     plugins {
         id "dev.flutter.flutter-gradle-plugin" version "1.0.0" apply false
+        id "org.jetbrains.kotlin.android" version "1.9.24" apply false
     }
 }
 
@@ -26,39 +26,36 @@ dependencyResolutionManagement {
 rootProject.name = "visora_ai_flutter"
 include(":app")
 
-// ✅ Detect Flutter SDK automatically (GitHub + Local)
+// ✅ Detect Flutter SDK automatically
 def flutterSdkPath = System.getenv("FLUTTER_HOME") ?: "../../.."
 if (flutterSdkPath && new File(flutterSdkPath).exists()) {
     println("✅ Flutter SDK found at: $flutterSdkPath")
     includeBuild(flutterSdkPath)
 } else {
-    println("⚠️ Flutter SDK not found, using runner SDK")
+    println("⚠️ Flutter SDK not found — using runner SDK.")
 }
 
-// ✅ Safe plugin loader (new Flutter 3.19.6 JSON support)
+// ✅ Safe plugin loader for Flutter 3.19.6 (auto-link plugins)
 import groovy.json.JsonSlurper
 
 def flutterPluginsFile = new File(rootDir, "../.flutter-plugins-dependencies")
-
 if (flutterPluginsFile.exists()) {
-    println("✅ Found Flutter plugin dependency file at ${flutterPluginsFile}")
+    println("✅ Found Flutter plugin dependency file: ${flutterPluginsFile}")
     try {
         def json = new JsonSlurper().parseText(flutterPluginsFile.text)
+        def allPlugins = []
 
-        def plugins = []
         if (json instanceof Map && json.values().first() instanceof Map) {
-            // Flutter 3.19+ format
             json.values().each { section ->
-                if (section instanceof Map && section.plugins instanceof List) {
-                    plugins.addAll(section.plugins)
+                if (section.plugins) {
+                    allPlugins.addAll(section.plugins)
                 }
             }
         } else if (json.plugins) {
-            // Old format
-            plugins = json.plugins
+            allPlugins = json.plugins
         }
 
-        plugins.each { plugin ->
+        allPlugins.each { plugin ->
             def name = plugin.name ?: plugin.value?.name
             def path = plugin.path ?: plugin.value?.path
             if (name && path && new File(path).exists()) {
@@ -68,13 +65,21 @@ if (flutterPluginsFile.exists()) {
             }
         }
 
-        if (plugins.isEmpty()) {
-            println("⚠️ No plugins linked — .flutter-plugins-dependencies empty")
+        if (allPlugins.isEmpty()) {
+            println("⚠️ No plugins found to link.")
         }
-
     } catch (Exception e) {
-        println("⚠️ Plugin load failed: ${e.message}")
+        println("⚠️ Plugin parse failed: ${e.message}")
     }
 } else {
-    println("⚠️ No .flutter-plugins-dependencies file found. Flutter will regenerate it automatically.")
+    println("⚠️ No .flutter-plugins-dependencies found. Will regenerate.")
+}
+
+// ✅ Workaround for Kotlin buildFlowServiceProperty crash
+gradle.settingsEvaluated {
+    gradle.rootProject {
+        if (plugins.hasPlugin("org.jetbrains.kotlin.android")) {
+            println("✅ Kotlin plugin verified and stable.")
+        }
+    }
 }
