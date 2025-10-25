@@ -1,4 +1,4 @@
-name: 🌩️ Visora AI Cloud v2 – Auto-Healing Build & Release APK
+name: ☁️ Visora AI Cloud v3 – Auto-Healing Build & Release APK
 
 on:
   push:
@@ -11,15 +11,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🧩 Checkout Repository
+      - name: 🧠 Checkout Repository
         uses: actions/checkout@v4
 
-      - name: ⚙️ Setup Flutter
+      - name: 🧰 Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.19.6"
+          flutter-version: "3.24.0"  # ✅ Updated to latest stable (Fix for SDK mismatch)
 
-      - name: 🛠️ Auto-Heal Gradle Config
+      - name: 🔧 Auto-Heal Gradle Config
         run: |
           echo "⚙️ Applying Gradle Auto-Heal Fix..."
           cat > android/build.gradle <<'EOF'
@@ -45,32 +45,28 @@ jobs:
               }
           }
 
-          rootProject.buildDir = '../build'
+          rootProject.buildDir = "../build"
 
           // ✅ EARLY EVALUATION FIX
           gradle.beforeProject { project ->
               if (project.hasProperty("android")) {
                   project.android {
-                      if (!project.hasProperty("compileSdkVersion")) {
-                          compileSdkVersion 35
-                      }
-                      if (!project.hasProperty("namespace")) {
-                          namespace = "com.example.visora_ai_flutter"
-                      }
+                      if (!project.hasProperty("compileSdkVersion")) compileSdkVersion 35
+                      if (!project.hasProperty("namespace")) namespace = "com.example.visora_ai_flutter"
                   }
               }
           }
 
           subprojects {
               project.buildDir = "${rootProject.buildDir}/${project.name}"
-              project.evaluationDependsOn(':app')
+              project.evaluationDependsOn(":app")
 
               tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
                   kotlinOptions {
-                      jvmTarget = '17'
-                      apiVersion = '1.9'
-                      languageVersion = '1.9'
-                      freeCompilerArgs += ['-Xskip-metadata-version-check']
+                      jvmTarget = "17"
+                      apiVersion = "1.9"
+                      languageVersion = "1.9"
+                      freeCompilerArgs += ["-Xskip-metadata-version-check"]
                   }
               }
           }
@@ -79,7 +75,7 @@ jobs:
               delete rootProject.buildDir
           }
           EOF
-          echo "✅ Gradle auto-heal complete!"
+          echo "✅ Gradle Auto-Heal Complete!"
 
       - name: 📦 Flutter Pub Get
         run: flutter pub get
