@@ -1,4 +1,4 @@
-// ✅ Visora AI Cloud-Stable Flutter Gradle Configuration
+// ⚙️ Visora AI Cloud – Stable Flutter Gradle Configuration
 
 pluginManagement {
     repositories {
@@ -7,34 +7,44 @@ pluginManagement {
         gradlePluginPortal()
     }
 
-    // 🧠 Dynamically detect Flutter SDK path in GitHub Runner
-    def flutterSdkPath = System.getenv("FLUTTER_HOME")
-
-    // ✅ Fallback for local or cloud builds
-    if (flutterSdkPath == null || flutterSdkPath.isEmpty()) {
-        // Try to detect Flutter SDK automatically
-        def flutterExecutable = "flutter"
-        try {
-            def proc = ["bash", "-c", "which flutter"].execute()
-            flutterSdkPath = proc.text.trim()
-            if (flutterSdkPath) {
-                flutterSdkPath = flutterSdkPath.replace("/bin/flutter", "")
-            }
-        } catch (Exception ignored) {
-            flutterSdkPath = ""
-        }
-    }
-
-    println("🔍 Flutter SDK detected at: " + flutterSdkPath)
-
-    // ✅ Include Flutter SDK only if it exists
-    if (flutterSdkPath && new File(flutterSdkPath).exists()) {
-        includeBuild(flutterSdkPath)
-    } else {
-        println("⚠️ No Flutter SDK found — skipping includeBuild. Ensure Flutter is installed or setup in Actions.")
+    // ✅ Add Flutter Gradle Plugin manually (for GitHub Cloud builds)
+    plugins {
+        id "dev.flutter.flutter-gradle-plugin" version "1.0.0"
     }
 }
 
+// 🧠 Dynamically detect Flutter SDK path in GitHub Runner or Local
+def flutterSdkPath = System.getenv("FLUTTER_HOME")
+
+// 🔁 Fallback for local or cloud builds
+if (flutterSdkPath == null || flutterSdkPath.isEmpty()) {
+    try {
+        def proc = ["bash", "-c", "which flutter"].execute()
+        proc.waitFor()
+        flutterSdkPath = proc.text.trim()
+        if (flutterSdkPath && flutterSdkPath.contains("/bin/flutter")) {
+            flutterSdkPath = flutterSdkPath.replace("/bin/flutter", "")
+        }
+    } catch (Exception ignored) {
+        flutterSdkPath = ""
+    }
+}
+
+// 🧩 Print detected SDK path
+if (flutterSdkPath) {
+    println("✅ Flutter SDK detected at: " + flutterSdkPath)
+} else {
+    println("⚠️ No Flutter SDK found — skipping includeBuild. Ensure Flutter is installed.")
+}
+
+// 🧩 Include Flutter SDK only if valid
+if (flutterSdkPath && new File(flutterSdkPath).exists()) {
+    includeBuild(flutterSdkPath)
+} else {
+    println("⚠️ Skipped includeBuild — using global Flutter installation.")
+}
+
+// 🔧 Dependency management configuration
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
@@ -44,13 +54,14 @@ dependencyResolutionManagement {
     }
 }
 
+// 🏗️ Root project info
 rootProject.name = "visora_ai_flutter"
 include(":app")
 
-// ✅ Plugin dependency confirmation
+// 🧾 Plugin dependency confirmation
 def flutterPluginsFile = new File(rootDir, "../.flutter-plugins-dependencies")
 if (flutterPluginsFile.exists()) {
-    println("✅ Flutter plugin dependencies file found at: ${flutterPluginsFile.absolutePath}")
+    println("✅ Flutter plugin dependencies file found at: ${flutterPluginsFile}")
 } else {
     println("⚠️ Flutter plugin dependencies missing, will regenerate automatically.")
 }
