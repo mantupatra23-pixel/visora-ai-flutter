@@ -1,4 +1,4 @@
-// ✅ Cloud-ready Flutter Gradle Configuration for Visora AI
+// ✅ Visora AI Cloud-Stable Flutter Gradle Configuration
 
 pluginManagement {
     repositories {
@@ -7,21 +7,31 @@ pluginManagement {
         gradlePluginPortal()
     }
 
-    // 🧠 Detect Flutter SDK path (for GitHub Cloud Runner)
+    // 🧠 Dynamically detect Flutter SDK path in GitHub Runner
     def flutterSdkPath = System.getenv("FLUTTER_HOME")
+
+    // ✅ Fallback for local or cloud builds
     if (flutterSdkPath == null || flutterSdkPath.isEmpty()) {
-        // ✅ Fallback for local build (when running on mobile or local PC)
-        flutterSdkPath = "${rootDir.getAbsoluteFile().getParentFile().path}/.flutter"
+        // Try to detect Flutter SDK automatically
+        def flutterExecutable = "flutter"
+        try {
+            def proc = ["bash", "-c", "which flutter"].execute()
+            flutterSdkPath = proc.text.trim()
+            if (flutterSdkPath) {
+                flutterSdkPath = flutterSdkPath.replace("/bin/flutter", "")
+            }
+        } catch (Exception ignored) {
+            flutterSdkPath = ""
+        }
     }
 
-    println("🔍 Using Flutter SDK path: " + flutterSdkPath)
+    println("🔍 Flutter SDK detected at: " + flutterSdkPath)
 
-    // ✅ Safely include Flutter SDK build if it exists
-    def flutterDir = new File(flutterSdkPath)
-    if (flutterDir.exists()) {
+    // ✅ Include Flutter SDK only if it exists
+    if (flutterSdkPath && new File(flutterSdkPath).exists()) {
         includeBuild(flutterSdkPath)
     } else {
-        println("⚠️ Flutter SDK path not found at: ${flutterSdkPath} (Skipping includeBuild)")
+        println("⚠️ No Flutter SDK found — skipping includeBuild. Ensure Flutter is installed or setup in Actions.")
     }
 }
 
@@ -37,10 +47,10 @@ dependencyResolutionManagement {
 rootProject.name = "visora_ai_flutter"
 include(":app")
 
-// ✅ Flutter plugin dependency check
+// ✅ Plugin dependency confirmation
 def flutterPluginsFile = new File(rootDir, "../.flutter-plugins-dependencies")
 if (flutterPluginsFile.exists()) {
-    println("✅ Flutter plugin dependencies found at: ${flutterPluginsFile.absolutePath}")
+    println("✅ Flutter plugin dependencies file found at: ${flutterPluginsFile.absolutePath}")
 } else {
-    println("⚠️ Flutter plugin dependencies not found. Flutter will regenerate them automatically.")
+    println("⚠️ Flutter plugin dependencies missing, will regenerate automatically.")
 }
