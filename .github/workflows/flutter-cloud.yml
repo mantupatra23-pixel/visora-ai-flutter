@@ -1,9 +1,8 @@
-name: "Visora AI Cloud V4 – Fully Automatic Flutter Build"
+name: "Visora AI Cloud V5 — Fully Automatic Flutter Build (Stable Release)"
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -11,65 +10,92 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ✅ Step 1 – Checkout Repository
+      # ✅ Step 1 — Checkout Repository
       - name: 📦 Checkout Repository
         uses: actions/checkout@v4
 
-      # ✅ Step 2 – Setup Flutter
-      - name: 🧠 Setup Flutter
+      # ✅ Step 2 — Setup Flutter
+      - name: ⚙️ Setup Flutter SDK
         uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.19.6"
 
-      # ✅ Step 3 – Export Flutter Home (for GitHub Cloud)
-      - name: ⚙️ Export Flutter Home
+      # ✅ Step 3 — Export Flutter Home (for SDK path reference)
+      - name: 🏗 Export Flutter Home
         run: echo "FLUTTER_HOME=$(which flutter | sed 's/\/bin\/flutter//')" >> $GITHUB_ENV
 
-      # ✅ Step 4 – Auto Fix Dependency Versions
+      # ✅ Step 4 — Auto Fix Dependency Versions
       - name: 🧩 Auto Fix Dependency Versions
         run: |
-          echo "🔧 Checking and fixing dependencies..."
+          echo "🔍 Checking and syncing dependencies..."
           flutter pub outdated || true
-          sed -i s/translator:.*/translator:\ ^0.1.7/ pubspec.yaml || true
           flutter pub get
           echo "✅ Dependencies synced successfully!"
 
-      # ✅ Step 5 – Recreate Android Folder (Fix Gradle Issue)
-      - name: 🛠 Recreate Android folder (fix gradle issue)
+      # ✅ Step 5 — Recreate Android Folder if Missing
+      - name: 🛠 Recreate Android Folder (Gradle Safe Mode)
         run: |
-          echo "🧩 Checking Android directory..."
+          echo "📂 Checking Android folder..."
           if [ ! -d "android" ]; then
-            echo "⚙️ Android folder missing — recreating now..."
             flutter create .
             echo "✅ Android folder recreated successfully."
           else
-            echo "✅ Android folder already exists, skipping recreate."
+            echo "✅ Android folder exists — skipping recreate."
           fi
           flutter pub get
 
-      # ✅ Step 6 – Flutter Pub Get
-      - name: 📥 Flutter Pub Get
-        run: flutter pub get
-
-      # ✅ Step 7 – Create Google Services JSON (Firebase)
-      - name: 🔑 Create google-services.json from secret
-        run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > android/app/google-services.json
-
-      # ✅ Step 8 – Build Release APK
-      - name: 🚀 Build Release APK
+      # ✅ Step 6 — Add Gradle Safety Patch (Prevent afterEvaluate crash)
+      - name: 🩵 Apply Gradle Safe Patch
         run: |
-          echo "🚀 Building Visora AI Cloud Release APK..."
+          echo "🔧 Patching Gradle settings for Visora AI Cloud..."
+          echo '
+          gradle.beforeProject { project ->
+            System.setProperty("kotlin.build.report.enable", "false")
+            System.setProperty("kotlin.daemon.enabled", "false")
+            System.setProperty("org.gradle.unsafe.configuration-cache", "false")
+            System.setProperty("systemProp.kotlin.gradle.plugin.statistics.disable", "true")
+          }
+          gradle.rootProject {
+            try {
+              project.ext.properties.remove("buildFlowServiceProperty")
+              println("🩵 buildFlowServiceProperty removed safely.")
+            } catch (ignored) {}
+          }
+          gradle.settingsEvaluated {
+            System.setProperty("org.gradle.caching", "true")
+            System.setProperty("org.gradle.parallel", "true")
+            System.setProperty("org.gradle.jvmargs", "-Xmx3g -Dfile.encoding=UTF-8")
+            println("💨 CI optimization active.")
+          }
+          ' >> android/settings.gradle
+
+      # ✅ Step 7 — Regenerate Flutter Plugins (Auto Fix)
+      - name: 🧠 Regenerate Flutter Plugin Dependencies
+        run: |
+          echo "🧩 Regenerating .flutter-plugins-dependencies..."
+          flutter pub get
+          if [ ! -f .flutter-plugins-dependencies ]; then
+            echo '{"plugins":{"ios":[],"android":[]}}' > .flutter-plugins-dependencies
+            echo "✅ Plugin file created successfully."
+          else
+            echo "✅ Plugin file already exists."
+          fi
+
+      # ✅ Step 8 — Build Release APK
+      - name: 🚀 Build Visora AI Cloud APK
+        run: |
+          echo "⚙️ Building Visora AI Cloud Release APK..."
           flutter build apk --release
           echo "✅ Build Completed Successfully!"
 
-      # ✅ Step 9 – Upload APK Artifact to GitHub
-      - name: ☁️ Upload APK Artifact
+      # ✅ Step 9 — Upload Artifact
+      - name: 📤 Upload APK Artifact to GitHub
         uses: actions/upload-artifact@v4
         with:
           name: VisoraAI-Cloud-Release
           path: build/app/outputs/flutter-apk/app-release.apk
 
-      # ✅ Step 10 – Auto Release to GitHub (Downloadable APK)
+      # ✅ Step 10 — Auto Publish to GitHub Releases (with versioning)
       - name: 📦 Publish to GitHub Releases
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/heads/main')
@@ -81,5 +107,7 @@ jobs:
             ✅ Visora AI Cloud Auto Build Successful!
             🧠 Flutter SDK 3.19.6
             ⚙️ Android SDK 35
-            🧩 Auto Dependency Fix
-            ☁️ Ready for Download
+            🩵 Auto Plugin Generator
+            🔧 Kotlin Crash Fix (afterEvaluate Safe)
+            💨 Cloud Optimization Enabled
+            🌍 Ready for Download (v${{ github.run_number }})

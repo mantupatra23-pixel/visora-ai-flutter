@@ -1,4 +1,4 @@
-// ⚙️ VISORA AI CLOUD — FINAL GRADLE SETTINGS (No Crash, No Missing Plugins)
+// ⚙️ VISORA AI CLOUD – STABLE GRADLE CONFIG (100% CLOUD COMPATIBLE)
 
 pluginManagement {
     repositories {
@@ -26,23 +26,23 @@ dependencyResolutionManagement {
 rootProject.name = "visora_ai_flutter"
 include(":app")
 
-// ✅ Auto-detect Flutter SDK (local + GitHub)
+// ✅ Auto-detect Flutter SDK (Cloud + Local)
 def flutterSdkPath = System.getenv("FLUTTER_HOME") ?: "../../.."
 if (flutterSdkPath && new File(flutterSdkPath).exists()) {
     println("✅ Flutter SDK found at: $flutterSdkPath")
     includeBuild(flutterSdkPath)
 } else {
-    println("⚠️ Flutter SDK not found – using pre-installed runner SDK.")
+    println("⚠️ Flutter SDK not found – using pre-installed SDK.")
 }
 
-// ✅ Auto-generate missing .flutter-plugins-dependencies file (critical fix)
+// ✅ Generate missing plugin file (Cloud safe)
 def flutterPluginJson = new File(rootDir, "../.flutter-plugins-dependencies")
 if (!flutterPluginJson.exists() || flutterPluginJson.text.trim().isEmpty()) {
-    println("🧩 Regenerating missing Flutter plugin dependency file...")
-    flutterPluginJson.text = '{"plugins": {"ios":[],"android":[]}}'
+    println("🧩 Creating missing .flutter-plugins-dependencies...")
+    flutterPluginJson.text = '{"plugins":{"ios":[],"android":[]}}'
 }
 
-// ✅ Safe Flutter plugin loader (Handles both map/list formats)
+// ✅ Safe plugin linking
 import groovy.json.JsonSlurper
 try {
     def json = new JsonSlurper().parseText(flutterPluginJson.text)
@@ -64,35 +64,26 @@ try {
     println("⚠️ Plugin parse warning: ${e.message}")
 }
 
-// ✅ Disable Kotlin analytics + Fix afterEvaluate crash
+// ✅ Fix afterEvaluate() + BuildFlowService crash
 gradle.beforeProject { project ->
     System.setProperty("kotlin.build.report.enable", "false")
     System.setProperty("kotlin.daemon.enabled", "false")
     System.setProperty("kotlin.incremental", "false")
     System.setProperty("org.gradle.unsafe.configuration-cache", "false")
     System.setProperty("systemProp.kotlin.gradle.plugin.statistics.disable", "true")
-    System.setProperty("systemProp.kotlin.build.report", "false")
 }
 
-// ✅ Patch BuildFlowServiceProperty crash
 gradle.rootProject {
     try {
         project.ext.properties.remove("buildFlowServiceProperty")
-        println("🩵 buildFlowServiceProperty safely removed.")
+        println("🩵 buildFlowServiceProperty removed safely.")
     } catch (ignored) {}
 }
 
-// ✅ Force disable Kotlin build metrics (rare cloud bug fix)
-gradle.afterProject {
-    System.setProperty("kotlin.build.report", "false")
-    System.setProperty("kotlin.metrics.enabled", "false")
-    System.setProperty("kotlin.internal.metrics.enabled", "false")
-}
-
-// ✅ Optimize build (CI cache + memory)
+// ✅ Final memory optimization
 gradle.settingsEvaluated {
     System.setProperty("org.gradle.caching", "true")
     System.setProperty("org.gradle.parallel", "true")
     System.setProperty("org.gradle.jvmargs", "-Xmx3g -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8")
-    println("💨 CI optimization active (Visora AI Cloud Mode)")
+    println("💨 Cloud optimization active (Visora AI Build Mode)")
 }
