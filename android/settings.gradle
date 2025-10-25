@@ -1,11 +1,11 @@
-// ⚙️ Visora AI Cloud – Final Stable Flutter Gradle Configuration (Flutter 3.19.6 Compatible)
+// ⚙️ Visora AI Cloud – Final Stable Build (Flutter 3.19.6 / Gradle 8.7 Compatible)
 
 pluginManagement {
     repositories {
         google()
         mavenCentral()
         gradlePluginPortal()
-        // Flutter Gradle repository
+        // Flutter Gradle repo
         maven { url "https://storage.googleapis.com/download.flutter.io" }
     }
     plugins {
@@ -26,51 +26,55 @@ dependencyResolutionManagement {
 rootProject.name = "visora_ai_flutter"
 include(":app")
 
-// ✅ Auto-detect Flutter SDK
+// ✅ Detect Flutter SDK automatically (GitHub + Local)
 def flutterSdkPath = System.getenv("FLUTTER_HOME") ?: "../../.."
 if (flutterSdkPath && new File(flutterSdkPath).exists()) {
-    println("✅ Flutter SDK detected at: $flutterSdkPath")
+    println("✅ Flutter SDK found at: $flutterSdkPath")
     includeBuild(flutterSdkPath)
 } else {
-    println("⚠️ Flutter SDK not found, will use default runner environment.")
+    println("⚠️ Flutter SDK not found, using runner SDK")
 }
 
-// ✅ Safe .flutter-plugins-dependencies parser (handles new Flutter 3.19.6 JSON format)
+// ✅ Safe plugin loader (new Flutter 3.19.6 JSON support)
 import groovy.json.JsonSlurper
 
 def flutterPluginsFile = new File(rootDir, "../.flutter-plugins-dependencies")
+
 if (flutterPluginsFile.exists()) {
     println("✅ Found Flutter plugin dependency file at ${flutterPluginsFile}")
     try {
         def json = new JsonSlurper().parseText(flutterPluginsFile.text)
 
-        def pluginList = []
-        if (json instanceof Map && json.containsKey("plugins")) {
-            // Older format
-            pluginList = json.plugins
-        } else if (json instanceof Map && json.values().first() instanceof Map) {
-            // New Flutter 3.19 format (plugins nested in "value" maps)
+        def plugins = []
+        if (json instanceof Map && json.values().first() instanceof Map) {
+            // Flutter 3.19+ format
             json.values().each { section ->
-                if (section.plugins) {
-                    pluginList.addAll(section.plugins)
+                if (section instanceof Map && section.plugins instanceof List) {
+                    plugins.addAll(section.plugins)
                 }
             }
+        } else if (json.plugins) {
+            // Old format
+            plugins = json.plugins
         }
 
-        pluginList.each { plugin ->
+        plugins.each { plugin ->
             def name = plugin.name ?: plugin.value?.name
             def path = plugin.path ?: plugin.value?.path
-            if (path && new File(path).exists() && name) {
+            if (name && path && new File(path).exists()) {
                 include(":$name")
                 project(":$name").projectDir = new File(path)
                 println("🔗 Linked plugin: $name")
-            } else {
-                println("⚠️ Skipped invalid plugin entry: $plugin")
             }
         }
+
+        if (plugins.isEmpty()) {
+            println("⚠️ No plugins linked — .flutter-plugins-dependencies empty")
+        }
+
     } catch (Exception e) {
-        println("⚠️ Failed to parse plugin dependencies file: ${e.message}")
+        println("⚠️ Plugin load failed: ${e.message}")
     }
 } else {
-    println("⚠️ No .flutter-plugins-dependencies found, Flutter will regenerate it automatically.")
+    println("⚠️ No .flutter-plugins-dependencies file found. Flutter will regenerate it automatically.")
 }
