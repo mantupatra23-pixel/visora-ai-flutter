@@ -1,6 +1,13 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id 'com.google.gms.google-services'
+    id 'dev.flutter.flutter-gradle-plugin'
+}
+
 android {
     namespace "com.example.visora_ai_flutter"
-    compileSdk 35  // ⚡ Direct fixed value for Cloud stability
+    compileSdk 35 // ⚡ Direct fixed value for Cloud stability
 
     defaultConfig {
         applicationId "com.example.visora_ai_flutter"
@@ -41,4 +48,16 @@ android {
 
 flutter {
     source '../..'
+}
+
+dependencies {
+    implementation platform('com.google.firebase:firebase-bom:33.4.0')
+    implementation 'com.google.firebase:firebase-analytics'
+    implementation 'com.google.firebase:firebase-auth'
+    implementation 'com.google.firebase:firebase-messaging'
+    implementation 'com.google.firebase:firebase-storage'
+    implementation 'com.google.firebase:firebase-crashlytics'
+
+    implementation 'androidx.core:core-ktx:1.13.1'
+    implementation 'androidx.multidex:multidex:2.0.1'
 }
