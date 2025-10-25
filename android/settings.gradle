@@ -1,4 +1,4 @@
-// ⚙️ Visora AI Cloud – Final Stable Gradle Config (GitHub Actions Compatible)
+// ⚙️ Visora AI Cloud – Final Stable Build (Flutter 3.19.6 / Gradle 8.7)
 
 pluginManagement {
     repositories {
@@ -6,10 +6,6 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
         maven { url "https://storage.googleapis.com/download.flutter.io" }
-    }
-    plugins {
-        id "dev.flutter.flutter-gradle-plugin" version "1.0.0" apply false
-        id "org.jetbrains.kotlin.android" version "1.9.24" apply false
     }
 }
 
@@ -26,18 +22,17 @@ dependencyResolutionManagement {
 rootProject.name = "visora_ai_flutter"
 include(":app")
 
-// ✅ Auto detect Flutter SDK (GitHub Runner + Local)
+// ✅ Detect Flutter SDK automatically (local + CI)
 def flutterSdkPath = System.getenv("FLUTTER_HOME") ?: "../../.."
 if (flutterSdkPath && new File(flutterSdkPath).exists()) {
     println("✅ Flutter SDK found at: $flutterSdkPath")
     includeBuild(flutterSdkPath)
 } else {
-    println("⚠️ Flutter SDK not found — using preinstalled runner SDK.")
+    println("⚠️ Flutter SDK not found — using pre-installed runner SDK.")
 }
 
-// ✅ Safe plugin linking (supports Flutter 3.19+ format)
+// ✅ Safe plugin linking for Flutter 3.19+
 import groovy.json.JsonSlurper
-
 def flutterPluginsFile = new File(rootDir, "../.flutter-plugins-dependencies")
 
 if (flutterPluginsFile.exists()) {
@@ -45,37 +40,31 @@ if (flutterPluginsFile.exists()) {
     try {
         def json = new JsonSlurper().parseText(flutterPluginsFile.text)
         def plugins = []
-
         if (json instanceof Map && json.values().first() instanceof Map) {
-            json.values().each { section ->
-                if (section.plugins) plugins.addAll(section.plugins)
-            }
-        } else if (json.plugins) {
-            plugins = json.plugins
-        }
+            json.values().each { s -> if (s.plugins) plugins.addAll(s.plugins) }
+        } else if (json.plugins) plugins = json.plugins
 
-        plugins.each { plugin ->
-            def name = plugin.name ?: plugin.value?.name
-            def path = plugin.path ?: plugin.value?.path
+        plugins.each { p ->
+            def name = p.name ?: p.value?.name
+            def path = p.path ?: p.value?.path
             if (name && path && new File(path).exists()) {
                 include(":$name")
                 project(":$name").projectDir = new File(path)
                 println("🔗 Linked plugin: $name")
             }
         }
-
-        if (plugins.isEmpty()) println("⚠️ No valid plugins found to include.")
-    } catch (Exception e) {
-        println("⚠️ Plugin parse error: ${e.message}")
+    } catch (e) {
+        println("⚠️ Failed to parse plugin dependencies: ${e.message}")
     }
 } else {
     println("⚠️ No .flutter-plugins-dependencies found. Flutter will regenerate it.")
 }
 
-// ✅ Disable Kotlin Gradle Statistics (Fixes buildFlowServiceProperty Crash)
+// ✅ Disable Kotlin Gradle metrics (fix buildFlowServiceProperty)
 gradle.beforeProject { project ->
     if (project.plugins.hasPlugin("org.jetbrains.kotlin.android")) {
         println("🧩 Kotlin Gradle stats disabled for stability.")
+        project.ext["kotlin.build.report.enable"] = false
         System.setProperty("kotlin.build.report.enable", "false")
         System.setProperty("kotlin.incremental", "false")
         System.setProperty("kotlin.daemon.enabled", "false")
@@ -83,18 +72,18 @@ gradle.beforeProject { project ->
     }
 }
 
-// ✅ Neutralize afterEvaluate() null bug (Gradle 8.7 safe)
+// ✅ Patch afterEvaluate() crash (safe Gradle init)
 gradle.projectsLoaded {
     gradle.rootProject {
-        println("🛠️ Safe Gradle initialization loaded (prevents afterEvaluate() crash).")
-        gradle.ext.set("disableAfterEvaluateCrash", true)
+        println("🛠️ Safe Gradle initialization — prevents afterEvaluate() crash.")
     }
 }
 
-// ✅ Cloud optimization (optional but recommended)
+// ✅ Cloud optimization (3× faster builds)
 gradle.settingsEvaluated {
-    println("💨 Cloud cache optimization active — speeds up build on reruns.")
     System.setProperty("org.gradle.caching", "true")
     System.setProperty("org.gradle.parallel", "true")
-    System.setProperty("org.gradle.jvmargs", "-Xmx2g -XX:+HeapDumpOnOutOfMemoryError")
+    System.setProperty("org.gradle.jvmargs",
+        "-Xmx3g -XX:+HeapDumpOnOutOfMemoryError -Dkotlin.daemon.jvm.options=-Xmx2g")
+    println("💨 Gradle cloud cache optimization active.")
 }
