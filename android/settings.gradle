@@ -17,7 +17,6 @@ dependencyResolutionManagement {
 rootProject.name = "visora_ai_flutter"
 include(":app")
 
-// ✅ DO NOT LOAD JSON AS SCRIPT
 def flutterPluginsFile = new File(rootDir, "../.flutter-plugins-dependencies")
 if (flutterPluginsFile.exists()) {
     println("✅ Flutter plugin dependencies file found.")

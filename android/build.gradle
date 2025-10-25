@@ -1,12 +1,6 @@
 buildscript {
     ext.kotlin_version = '1.9.25'
 
-    repositories {
-        google()
-        mavenCentral()
-        gradlePluginPortal()
-    }
-
     dependencies {
         classpath 'com.android.tools.build:gradle:8.5.2'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
@@ -14,17 +8,7 @@ buildscript {
     }
 }
 
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-        gradlePluginPortal()
-    }
-}
-
-rootProject.buildDir = '../build'
-
-/* ✅ Global SDK defaults (cloud-safe) */
+// ✅ Cloud-safe SDK defaults
 ext {
     flutterMinSdkVersion = 23
     flutterTargetSdkVersion = 35
@@ -32,7 +16,7 @@ ext {
     flutterNamespace = "com.example.visora_ai_flutter"
 }
 
-/* ✅ Apply SDK + Namespace for all subprojects (cloud mode) */
+// ✅ Apply SDK + Namespace for all subprojects (Cloud mode)
 subprojects {
     afterEvaluate { project ->
         if (project.plugins.hasPlugin("com.android.library") || project.plugins.hasPlugin("com.android.application")) {
@@ -50,18 +34,19 @@ subprojects {
     }
 }
 
-/* ✅ Kotlin Config for Cloud */
+// ✅ Kotlin config for Cloud
 subprojects {
     tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
         kotlinOptions {
             jvmTarget = '17'
             apiVersion = '1.9'
             languageVersion = '1.9'
+            freeCompilerArgs += ['-Xskip-metadata-version-check']
         }
     }
 }
 
-/* ✅ Clean Task */
+// ✅ Clean task
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
