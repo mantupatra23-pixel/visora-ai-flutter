@@ -1,4 +1,4 @@
-name: "Visora AI Cloud V7.4 – Fully Automatic Flutter Build (Dynamic Firebase + Cloud Optimized)"
+name: "Visora AI Cloud V7.4.1 – Fully Automatic Flutter Build (Dynamic Firebase + Cloud Optimized)"
 
 on:
   push:
@@ -68,11 +68,12 @@ jobs:
           println('☁️ CI optimization active.')
         }" >> android/settings.gradle
 
-    # ✅ Step 7 – Dynamic Firebase Config (No JSON File Needed)
+    # ✅ Step 7 – Full Dynamic Firebase Config (with project_number)
     - name: 🔐 Generate Firebase Config (Dynamic Secret)
       run: |
         echo "{
           \"project_info\": {
+            \"project_number\": \"${{ secrets.FIREBASE_PROJECT_NUMBER }}\",
             \"project_id\": \"${{ secrets.FIREBASE_PROJECT_ID }}\",
             \"storage_bucket\": \"${{ secrets.FIREBASE_STORAGE_BUCKET }}\"
           },
@@ -89,7 +90,7 @@ jobs:
           }],
           \"configuration_version\": \"1\"
         }" > android/app/google-services.json
-        echo "✅ Firebase Config file dynamically generated."
+        echo "✅ Firebase Config file dynamically generated (Full)."
 
     # ✅ Step 8 - Auto Create Missing Asset Folders
     - name: 🧾 Create Missing Asset Folders
@@ -134,8 +135,8 @@ jobs:
         name: "Visora AI Cloud Build #${{ github.run_number }}"
         body: |
           ☁️ Visora AI Cloud Auto Build Successful!
-          🔧 Firebase Config: Dynamic Secrets Enabled
+          🔐 Dynamic Firebase Config Enabled
+          🧠 Cloud Optimization Active
           ⚙️ Flutter SDK: 3.19.6
-          🧠 Cloud Optimization: Active
           🧩 Auto Plugin & Asset Fix Enabled
           🏁 CI Build Ready (v${{ github.run_number }})
