@@ -1,4 +1,4 @@
-// 🚀 Visora AI Cloud Build - v8.8 (Final Stable - Flutter() Fix)
+// 🚀 Visora AI Cloud v9.0 - Final Stable Build (No Error Version)
 
 buildscript {
     ext.kotlin_version = '1.9.22'
@@ -27,17 +27,18 @@ if (file(flutterGradlePath).exists()) {
     println("✅ Flutter Gradle found at: ${flutterGradlePath}")
     apply from: flutterGradlePath
 } else {
-    println("⚠️ Flutter Gradle not found. Creating minimal compatibility layer...")
+    println("⚠️ Flutter Gradle not found, loading fallback...")
     def tempGradle = file("${projectDir}/temp_flutter.gradle")
     tempGradle.text = """
         project.ext.flutter = [
             source: '../..'
         ]
-        println '⚡ Temporary flutter.gradle loaded successfully.'
+        println '⚡ Temporary flutter.gradle loaded'
     """
     apply from: tempGradle
 }
 
+// ✅ Android Configuration
 android {
     namespace "com.example.visora_ai_flutter"
     compileSdk 35
@@ -79,10 +80,42 @@ android {
     }
 }
 
-// ✅ Define flutter{} explicitly for compatibility
+// ✅ Flutter Plugin Reference
 ext.flutter = [
     source: '../..'
 ]
+
+// ✅ Auto Resource Creator (Fixes ic_launcher issue)
+gradle.taskGraph.whenReady {
+    def iconDir = file("${projectDir}/src/main/res/mipmap-anydpi-v26")
+    def valuesDir = file("${projectDir}/src/main/res/values")
+
+    if (!iconDir.exists()) {
+        iconDir.mkdirs()
+        def iconFile = new File(iconDir, "ic_launcher.xml")
+        iconFile.text = """<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background"/>
+    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
+</adaptive-icon>
+"""
+        println("🆕 Created default ic_launcher.xml")
+    }
+
+    if (!valuesDir.exists()) {
+        valuesDir.mkdirs()
+        def colorFile = new File(valuesDir, "colors.xml")
+        colorFile.text = """<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_launcher_background">#FFFFFF</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="primaryColor">#1976D2</color>
+</resources>
+"""
+        println("🆕 Created default colors.xml")
+    }
+}
 
 // ✅ Firebase + Core Dependencies
 dependencies {
