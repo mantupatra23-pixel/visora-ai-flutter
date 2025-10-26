@@ -1,4 +1,4 @@
-name: "Visora AI Cloud V7.7 – Universal Safe Build (Firebase + AppCompat + Auto Retry)"
+name: "Visora AI Cloud V7.8 – Fully Stable Build (AppCompat + Firebase + Auto Fix)"
 
 on:
   push:
@@ -27,103 +27,72 @@ jobs:
     # ✅ Step 4 - Auto Fix Dependencies
     - name: 🔄 Auto Fix Dependency Versions
       run: |
-        echo "📦 Checking and syncing dependencies..."
+        flutter pub get || true
         flutter pub outdated || true
-        flutter pub get
         echo "✅ Dependencies synced successfully!"
 
-    # ✅ Step 5 - Ensure Android Folder Exists
-    - name: 🧱 Recreate Android Folder if Missing
+    # ✅ Step 5 - Ensure Android Folder
+    - name: 🧱 Ensure Android Folder Exists
       run: |
-        echo "📂 Checking Android folder..."
         if [ ! -d "android" ]; then
           flutter create .
-          echo "🆕 Android folder recreated successfully."
+          echo "🆕 Android folder created."
         else
-          echo "✅ Android folder exists - skipping recreate."
+          echo "✅ Android folder exists."
         fi
-        flutter pub get
 
-    # ✅ Step 6 - Gradle Safe Patch (Crash Prevention)
-    - name: 💙 Apply Gradle Safe Patch
+    # ✅ Step 6 - Gradle Safe Patch
+    - name: 💙 Gradle Safe Patch
       run: |
-        echo "🔧 Patching Gradle settings for Visora AI Cloud..."
         echo "
         gradle.beforeProject { project ->
-          System.setProperty('kotlin.build.report.enabled', 'false')
-          System.setProperty('kotlin.daemon.enabled', 'false')
           System.setProperty('org.gradle.unsafe.configuration-cache', 'false')
-          System.setProperty('systemProp.kotlin.gradle.plugin.statistics.disable', 'true')
-        }
-        gradle.rootProject {
-          try {
-            project.ext.properties.remove('buildFlowServiceProperty')
-            println('💙 buildFlowServiceProperty removed safely.')
-          } catch (ignored) {}
         }
         gradle.settingsEvaluated {
           System.setProperty('org.gradle.caching', 'true')
           System.setProperty('org.gradle.parallel', 'true')
           System.setProperty('org.gradle.jvmargs', '-Xmx3g -Dfile.encoding=UTF-8')
-          println('☁️ CI optimization active.')
         }" >> android/settings.gradle
+        echo "✅ Gradle Safe Patch applied."
 
-    # ✅ Step 6.5 - Universal Safe Theme Fix (AppCompat)
-    - name: 🧩 Auto Fix Android Resources (Universal Theme Safe)
+    # ✅ Step 6.5 - Inject AppCompat Dependency + Create Safe Styles
+    - name: 🧩 Add AppCompat Dependency + Safe Theme
       run: |
-        echo "🧩 Checking Android resource files..."
-        mkdir -p android/app/src/main/res/mipmap-anydpi-v26
+        echo "🔧 Adding AppCompat dependency..."
+        sed -i '/dependencies {/a \    implementation "androidx.appcompat:appcompat:1.7.0"' android/app/build.gradle || true
+
         mkdir -p android/app/src/main/res/values
         mkdir -p android/app/src/main/res/values-night
 
-        # Create ic_launcher if missing
-        if [ ! -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml ]; then
-          echo "<?xml version=\"1.0\" encoding=\"utf-8\"?>
-          <adaptive-icon xmlns:android=\"http://schemas.android.com/apk/res/android\">
-              <background android:drawable=\"@color/ic_launcher_background\"/>
-              <foreground android:drawable=\"@mipmap/ic_launcher_foreground\"/>
-          </adaptive-icon>" > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
-          echo "🆕 Added default ic_launcher.xml"
-        fi
-
-        # Create colors.xml
         echo "<?xml version=\"1.0\" encoding=\"utf-8\"?>
         <resources>
-            <color name=\"ic_launcher_background\">#FFFFFF</color>
             <color name=\"white\">#FFFFFF</color>
             <color name=\"black\">#000000</color>
             <color name=\"primaryColor\">#1976D2</color>
         </resources>" > android/app/src/main/res/values/colors.xml
 
-        # ✅ Create styles.xml using AppCompat fallback
         echo "<?xml version=\"1.0\" encoding=\"utf-8\"?>
         <resources>
-            <style name=\"LaunchTheme\" parent=\"Theme.AppCompat.Light.NoActionBar\">
+            <style name=\"LaunchTheme\" parent=\"android:Theme.Material.Light.NoActionBar\">
                 <item name=\"android:windowBackground\">@color/white</item>
                 <item name=\"android:statusBarColor\">@color/primaryColor</item>
-                <item name=\"android:navigationBarColor\">@color/primaryColor</item>
             </style>
 
-            <style name=\"NormalTheme\" parent=\"Theme.AppCompat.DayNight.NoActionBar\">
+            <style name=\"NormalTheme\" parent=\"android:Theme.Material.Light.NoActionBar\">
                 <item name=\"android:windowBackground\">@color/white</item>
-                <item name=\"android:statusBarColor\">@color/primaryColor</item>
-                <item name=\"android:navigationBarColor\">@color/primaryColor</item>
             </style>
         </resources>" > android/app/src/main/res/values/styles.xml
 
-        # ✅ Night mode version
         echo "<?xml version=\"1.0\" encoding=\"utf-8\"?>
         <resources>
-            <style name=\"LaunchTheme\" parent=\"Theme.AppCompat.DayNight.NoActionBar\">
+            <style name=\"LaunchTheme\" parent=\"android:Theme.Material.NoActionBar\">
                 <item name=\"android:windowBackground\">@color/black</item>
-                <item name=\"android:statusBarColor\">@color/black</item>
-                <item name=\"android:navigationBarColor\">@color/black</item>
             </style>
         </resources>" > android/app/src/main/res/values-night/styles.xml
 
-        echo "✅ Universal AppCompat-safe Android resource files created successfully."
+        echo "✅ AppCompat + MaterialSafe themes applied successfully."
 
-    # ✅ Step 7 – Firebase Config via Secrets
+    # ✅ Step 7 - Firebase Config via GitHub Secrets
     - name: 🔐 Generate Firebase Config (Dynamic Secret)
       run: |
         echo "{
@@ -145,42 +114,35 @@ jobs:
           }],
           \"configuration_version\": \"1\"
         }" > android/app/google-services.json
-        echo "✅ Firebase Config file dynamically generated."
+        echo "✅ Firebase Config added dynamically."
 
-    # ✅ Step 8 - Ensure Asset Folders
-    - name: 🧾 Create Missing Asset Folders
+    # ✅ Step 8 - Create Assets Folder
+    - name: 📁 Create Assets Folder
       run: |
-        mkdir -p assets/lottie assets/logo assets/icons assets/images
-        touch assets/lottie/.keep assets/logo/.keep assets/icons/.keep assets/images/.keep
-        echo "📁 Asset folders verified and created."
+        mkdir -p assets/logo assets/images assets/icons assets/lottie
+        touch assets/logo/.keep assets/images/.keep assets/icons/.keep assets/lottie/.keep
+        echo "✅ Asset folders ready."
 
-    # ✅ Step 9 - Plugin Dependencies
-    - name: 🔄 Regenerate Flutter Plugin Dependencies
+    # ✅ Step 9 - Regenerate Plugin Dependencies
+    - name: 🔄 Regenerate Plugins
       run: |
-        echo "🔧 Regenerating .flutter-plugins-dependencies..."
         flutter pub get
-        if [ ! -f .flutter-plugins-dependencies ]; then
-          echo '{"plugins":{"ios":[],"android":[]}}' > .flutter-plugins-dependencies
-          echo "✅ Plugin file created successfully."
-        else
-          echo "✅ Plugin file already exists."
-        fi
+        echo "✅ Flutter plugin dependencies regenerated."
 
-    # ✅ Step 10 - Build Release APK (Auto Retry)
-    - name: 🚀 Build Visora AI Cloud Release APK (Retry Safe)
+    # ✅ Step 10 - Build APK (Auto Retry)
+    - name: 🚀 Build Release APK (Retry Safe)
       run: |
-        echo "🏗️ Building Visora AI Cloud Release APK..."
-        flutter build apk --release || (echo "⚠️ Build failed once, retrying..." && flutter clean && flutter pub get && flutter build apk --release)
-        echo "🎯 Build Completed Successfully!"
+        flutter build apk --release || (echo "⚠️ Build failed, retrying..." && flutter clean && flutter pub get && flutter build apk --release)
+        echo "🎯 Build completed successfully!"
 
     # ✅ Step 11 - Upload Artifact
-    - name: 📤 Upload APK Artifact to GitHub
+    - name: 📤 Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: VisoraAI-Cloud-Release
         path: build/app/outputs/flutter-apk/app-release.apk
 
-    # ✅ Step 12 - Publish to GitHub Releases
+    # ✅ Step 12 - Publish to GitHub Release
     - name: 🚀 Publish to GitHub Releases
       if: startsWith(github.ref, 'refs/heads/main')
       uses: softprops/action-gh-release@v1
@@ -190,8 +152,8 @@ jobs:
         name: "Visora AI Cloud Build #${{ github.run_number }}"
         body: |
           ☁️ Visora AI Cloud Auto Build Successful!
-          🔐 Firebase Config via Secrets
-          🧩 Universal AppCompat Safe Theme Applied
+          🧩 Universal Material + AppCompat Safe
+          🔐 Firebase Secrets Applied
           ⚙️ Flutter SDK: 3.19.6
-          💙 CI Cloud Optimization Ready
+          💙 CI Optimization Enabled
           🏁 Version v${{ github.run_number }}
