@@ -1,4 +1,4 @@
-name: "Visora AI Cloud V8.0 – CloudRoot AutoFix Build (100% Cloud Compatible)"
+name: "Visora AI Cloud V8.1 – CloudRoot Path AutoFix + 100% Stable Build"
 
 on:
   push:
@@ -20,41 +20,38 @@ jobs:
       with:
         flutter-version: "3.19.6"
 
-    # ✅ Step 3 - Repair Flutter Root Path (Cloud Fix)
-    - name: 🧠 Repair Flutter Root Path
+    # ✅ Step 3 - Detect Flutter Root (Cloud Safe)
+    - name: 🔍 Detect Flutter Root
+      id: flutter-root
       run: |
-        echo "🔍 Checking flutter.gradle path..."
         FLUTTER_PATH=$(which flutter)
         FLUTTER_ROOT=$(dirname $(dirname $FLUTTER_PATH))
-        echo "📍 Flutter Root detected at: $FLUTTER_ROOT"
+        echo "Flutter root: $FLUTTER_ROOT"
+        echo "FLUTTER_ROOT=$FLUTTER_ROOT" >> $GITHUB_ENV
+        ls -l $FLUTTER_ROOT/packages/flutter_tools/gradle/ || true
 
-        if [ ! -f "$FLUTTER_ROOT/packages/flutter_tools/gradle/flutter.gradle" ]; then
-          echo "⚠️ flutter.gradle not found, recreating link..."
-          mkdir -p android/gradle/flutter_tools/gradle
-          cp -r $FLUTTER_ROOT/packages/flutter_tools/gradle/flutter.gradle android/gradle/flutter_tools/gradle/flutter.gradle || true
-        fi
-
-        echo "✅ Flutter Gradle path ready for cloud build."
-
-    # ✅ Step 4 - Fix android/app/build.gradle (auto insert fallback)
-    - name: 🧩 Patch Gradle Build File (Cloud Safe)
+    # ✅ Step 4 - Copy flutter.gradle into Android folder (if missing)
+    - name: 🛠 Fix Missing flutter.gradle Path
       run: |
-        echo "🧩 Patching android/app/build.gradle..."
-        if ! grep -q "flutter.gradle" android/app/build.gradle; then
-          echo 'apply from: "../gradle/flutter_tools/gradle/flutter.gradle"' >> android/app/build.gradle
-          echo "✅ flutter.gradle path added."
+        mkdir -p android/gradle/flutter_tools/gradle
+        if [ -f "$FLUTTER_ROOT/packages/flutter_tools/gradle/flutter.gradle" ]; then
+          cp $FLUTTER_ROOT/packages/flutter_tools/gradle/flutter.gradle android/gradle/flutter_tools/gradle/flutter.gradle
+          echo "✅ Copied flutter.gradle locally."
         else
-          echo "✅ flutter.gradle path already present."
+          echo "⚠️ flutter.gradle not found in Flutter SDK, fallback skipped."
         fi
 
-    # ✅ Step 5 - Dependencies
-    - name: 🔄 Install Dependencies
-      run: |
-        flutter pub get
-        echo "✅ Dependencies installed!"
+        # Patch android/app/build.gradle safely
+        sed -i '/apply from/d' android/app/build.gradle || true
+        echo 'apply from: "../gradle/flutter_tools/gradle/flutter.gradle"' >> android/app/build.gradle
+        echo "✅ build.gradle patched successfully."
 
-    # ✅ Step 6 - Auto Create Android Resources (Icon + Theme)
-    - name: 🎨 Auto Create Android Resources
+    # ✅ Step 5 - Get Dependencies
+    - name: 🔄 Install Dependencies
+      run: flutter pub get
+
+    # ✅ Step 6 - Create Android Resources (Auto Safe)
+    - name: 🎨 Create Android Resources
       run: |
         mkdir -p android/app/src/main/res/mipmap-anydpi-v26
         mkdir -p android/app/src/main/res/values
@@ -80,17 +77,10 @@ jobs:
           </style>
         </resources>" > android/app/src/main/res/values/styles.xml
 
-        echo "<?xml version=\"1.0\" encoding=\"utf-8\"?>
-        <resources>
-          <style name=\"LaunchTheme\" parent=\"android:Theme.Material.NoActionBar\">
-            <item name=\"android:windowBackground\">@color/black</item>
-          </style>
-        </resources>" > android/app/src/main/res/values-night/styles.xml
+        echo "✅ Android icons & themes ready."
 
-        echo "✅ Android resources ready!"
-
-    # ✅ Step 7 - Firebase Config from Secrets
-    - name: 🔐 Generate Firebase Config (Secrets)
+    # ✅ Step 7 - Firebase Config
+    - name: 🔐 Firebase Config (Secrets)
       run: |
         echo "{
           \"project_info\": {
@@ -107,10 +97,10 @@ jobs:
           }],
           \"configuration_version\": \"1\"
         }" > android/app/google-services.json
-        echo "✅ Firebase Config added!"
+        echo "✅ Firebase Config added."
 
     # ✅ Step 8 - Build APK (Retry Safe)
-    - name: 🚀 Build Release APK (Cloud Safe)
+    - name: 🚀 Build APK (Cloud Safe)
       run: |
         flutter build apk --release || (flutter clean && flutter pub get && flutter build apk --release)
         echo "🎯 Build completed successfully!"
@@ -122,7 +112,7 @@ jobs:
         name: VisoraAI-Cloud-Release
         path: build/app/outputs/flutter-apk/app-release.apk
 
-    # ✅ Step 10 - Publish to GitHub Release
+    # ✅ Step 10 - Publish to GitHub Releases
     - name: 🚀 Publish to GitHub Releases
       if: startsWith(github.ref, 'refs/heads/main')
       uses: softprops/action-gh-release@v1
@@ -131,8 +121,8 @@ jobs:
         tag_name: v${{ github.run_number }}
         name: "Visora AI Cloud Build #${{ github.run_number }}"
         body: |
-          ☁️ Visora AI Cloud V8.0 Build Successful!
-          🧠 FlutterRoot AutoFix Enabled
-          🎨 Icon + Theme Configured
-          🔐 Firebase Integrated
-          💙 100% Cloud Safe
+          ☁️ Visora AI Cloud V8.1 Build Successful!
+          🧠 FlutterRoot AutoFix Patched
+          🔐 Firebase Config Ready
+          🎨 Android Icons + Themes Generated
+          💙 Build Stable in Cloud
