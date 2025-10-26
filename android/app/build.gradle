@@ -1,10 +1,4 @@
-// 🚀 Visora AI - Cloud Safe Build Configuration (V8.4)
-
-plugins {
-    id 'com.android.application'
-    id 'org.jetbrains.kotlin.android'
-    id 'com.google.gms.google-services'
-}
+// 🚀 Visora AI Cloud Build (v8.5 - Final Stable)
 
 buildscript {
     ext.kotlin_version = '1.9.22'
@@ -15,10 +9,17 @@ buildscript {
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "com.android.tools.build:gradle:8.5.0"
+        classpath "com.google.gms:google-services:4.4.2"
     }
 }
 
-// ✅ Force Load Flutter Gradle BEFORE Flutter Block
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id 'com.google.gms.google-services'
+}
+
+// ✅ Load Flutter Gradle before flutter{} block
 def flutterRoot = System.getenv("FLUTTER_HOME") ?: "../../.."
 def flutterGradlePath = "${flutterRoot}/packages/flutter_tools/gradle/flutter.gradle"
 
@@ -26,7 +27,7 @@ if (file(flutterGradlePath).exists()) {
     apply from: flutterGradlePath
     println("✅ Flutter Gradle loaded from: ${flutterGradlePath}")
 } else {
-    println("⚠️ Flutter Gradle not found, using fallback path.")
+    println("⚠️ Flutter Gradle not found, using fallback relative path.")
     apply from: "../../packages/flutter_tools/gradle/flutter.gradle"
 }
 
@@ -71,7 +72,7 @@ android {
     }
 }
 
-// ✅ Flutter Plugin Reference (Now works because gradle is loaded above)
+// ✅ Flutter Plugin Reference
 flutter {
     source '../..'
 }
