@@ -1,4 +1,4 @@
-name: "Visora AI Cloud V7.4.1 – Fully Automatic Flutter Build (Dynamic Firebase + Cloud Optimized)"
+name: "Visora AI Cloud V7.5 – Fully Automatic Flutter Build (Firebase + Auto Resource Fix + Cloud Retry)"
 
 on:
   push:
@@ -20,7 +20,7 @@ jobs:
       with:
         flutter-version: "3.19.6"
 
-    # ✅ Step 3 - Export Flutter Home
+    # ✅ Step 3 - Export Flutter Home Path
     - name: ⚙️ Export Flutter Home Path
       run: echo "FLUTTER_HOME=$(which flutter | sed 's/\/bin\/flutter//')" >> $GITHUB_ENV
 
@@ -68,7 +68,38 @@ jobs:
           println('☁️ CI optimization active.')
         }" >> android/settings.gradle
 
-    # ✅ Step 7 – Full Dynamic Firebase Config (with project_number)
+    # ✅ Step 6.5 - Auto Fix Android Resources
+    - name: 🧩 Auto Fix Android Resources (ic_launcher & LaunchTheme)
+      run: |
+        echo "🧩 Checking Android resource files..."
+        mkdir -p android/app/src/main/res/mipmap-anydpi-v26
+        mkdir -p android/app/src/main/res/values
+
+        # Recreate missing launcher icon
+        if [ ! -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml ]; then
+          echo "<?xml version=\"1.0\" encoding=\"utf-8\"?>
+          <adaptive-icon xmlns:android=\"http://schemas.android.com/apk/res/android\">
+              <background android:drawable=\"@color/ic_launcher_background\"/>
+              <foreground android:drawable=\"@mipmap/ic_launcher_foreground\"/>
+          </adaptive-icon>" > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          echo "🆕 Added default ic_launcher.xml"
+        fi
+
+        # Recreate missing styles.xml with LaunchTheme
+        if [ ! -f android/app/src/main/res/values/styles.xml ]; then
+          echo "<?xml version=\"1.0\" encoding=\"utf-8\"?>
+          <resources>
+              <style name=\"LaunchTheme\" parent=\"Theme.Material3.Light.NoActionBar\">
+                  <item name=\"android:windowBackground\">@color/white</item>
+              </style>
+              <style name=\"NormalTheme\" parent=\"Theme.Material3.DayNight.NoActionBar\" />
+          </resources>" > android/app/src/main/res/values/styles.xml
+          echo "🆕 Added missing LaunchTheme in styles.xml"
+        fi
+
+        echo "✅ Android resource files verified & fixed."
+
+    # ✅ Step 7 – Full Dynamic Firebase Config (Secrets Based)
     - name: 🔐 Generate Firebase Config (Dynamic Secret)
       run: |
         echo "{
@@ -111,11 +142,11 @@ jobs:
           echo "✅ Plugin file already exists."
         fi
 
-    # ✅ Step 10 - Build Release APK
-    - name: 🚀 Build Visora AI Cloud Release APK
+    # ✅ Step 10 - Build Release APK with Retry Protection
+    - name: 🚀 Build Visora AI Cloud Release APK (Retry Safe)
       run: |
         echo "🏗️ Building Visora AI Cloud Release APK..."
-        flutter build apk --release
+        flutter build apk --release || (echo "⚠️ Build failed once, retrying..." && flutter clean && flutter pub get && flutter build apk --release)
         echo "🎯 Build Completed Successfully!"
 
     # ✅ Step 11 - Upload APK Artifact to GitHub
@@ -135,8 +166,8 @@ jobs:
         name: "Visora AI Cloud Build #${{ github.run_number }}"
         body: |
           ☁️ Visora AI Cloud Auto Build Successful!
-          🔐 Dynamic Firebase Config Enabled
-          🧠 Cloud Optimization Active
+          🔐 Firebase Dynamic Config via Secrets
+          🧩 Auto Android Resource Fix Enabled
           ⚙️ Flutter SDK: 3.19.6
-          🧩 Auto Plugin & Asset Fix Enabled
-          🏁 CI Build Ready (v${{ github.run_number }})
+          💙 CI Cloud Optimization Ready
+          🏁 Version v${{ github.run_number }}
