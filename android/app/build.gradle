@@ -1,4 +1,4 @@
-// 🚀 Visora AI Cloud Build (v8.5 - Final Stable)
+// 🚀 Visora AI - Cloud Safe Build (v8.6 - FINAL)
 
 buildscript {
     ext.kotlin_version = '1.9.22'
@@ -7,8 +7,8 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "com.android.tools.build:gradle:8.5.0"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "com.google.gms:google-services:4.4.2"
     }
 }
@@ -19,15 +19,16 @@ plugins {
     id 'com.google.gms.google-services'
 }
 
-// ✅ Load Flutter Gradle before flutter{} block
+// ✅ Force-load Flutter Gradle with safe absolute fallback
 def flutterRoot = System.getenv("FLUTTER_HOME") ?: "../../.."
 def flutterGradlePath = "${flutterRoot}/packages/flutter_tools/gradle/flutter.gradle"
 
-if (file(flutterGradlePath).exists()) {
+// Always use existing file if available
+if (new File(flutterGradlePath).exists()) {
+    println("✅ Flutter Gradle found at: ${flutterGradlePath}")
     apply from: flutterGradlePath
-    println("✅ Flutter Gradle loaded from: ${flutterGradlePath}")
 } else {
-    println("⚠️ Flutter Gradle not found, using fallback relative path.")
+    println("⚠️ Flutter Gradle not found at ${flutterGradlePath}, using hard fallback...")
     apply from: "../../packages/flutter_tools/gradle/flutter.gradle"
 }
 
@@ -72,12 +73,12 @@ android {
     }
 }
 
-// ✅ Flutter Plugin Reference
+// ✅ Flutter Plugin Reference (works now because gradle is loaded)
 flutter {
     source '../..'
 }
 
-// ✅ Firebase + Android Dependencies
+// ✅ Dependencies
 dependencies {
     implementation platform('com.google.firebase:firebase-bom:33.4.0')
     implementation 'com.google.firebase:firebase-analytics'
