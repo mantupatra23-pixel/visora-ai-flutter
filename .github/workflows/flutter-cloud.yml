@@ -1,4 +1,4 @@
-name: "Visora AI Cloud V7.3 – Fully Automatic Flutter Build (Cloud + Auto Fix + Firebase)"
+name: "Visora AI Cloud V7.4 – Fully Automatic Flutter Build (Dynamic Firebase + Cloud Optimized)"
 
 on:
   push:
@@ -10,80 +10,98 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # ✅ Step 1 – Checkout Repository
+    # ✅ Step 1 - Checkout Repository
     - name: 📦 Checkout Repository
       uses: actions/checkout@v4
 
-    # ✅ Step 2 – Setup Flutter SDK
+    # ✅ Step 2 - Setup Flutter SDK
     - name: 🧩 Setup Flutter SDK
       uses: subosito/flutter-action@v2
       with:
         flutter-version: "3.19.6"
 
-    # ✅ Step 3 – Export Flutter Home
-    - name: 🏗️ Export Flutter Home
+    # ✅ Step 3 - Export Flutter Home
+    - name: ⚙️ Export Flutter Home Path
       run: echo "FLUTTER_HOME=$(which flutter | sed 's/\/bin\/flutter//')" >> $GITHUB_ENV
 
-    # ✅ Step 4 – Auto Fix Dependency Versions
+    # ✅ Step 4 - Auto Fix Dependency Versions
     - name: 🔄 Auto Fix Dependency Versions
       run: |
-        echo "🌐 Checking and syncing dependencies..."
+        echo "📦 Checking and syncing dependencies..."
         flutter pub outdated || true
         flutter pub get
         echo "✅ Dependencies synced successfully!"
 
-    # ✅ Step 5 – Recreate Android Folder (Safe Mode)
+    # ✅ Step 5 - Recreate Android Folder (Safe Mode)
     - name: 🧱 Recreate Android Folder if Missing
       run: |
-        echo "🔍 Checking Android folder..."
+        echo "📂 Checking Android folder..."
         if [ ! -d "android" ]; then
           flutter create .
-          echo "✅ Android folder recreated successfully."
+          echo "🆕 Android folder recreated successfully."
         else
           echo "✅ Android folder exists - skipping recreate."
         fi
         flutter pub get
 
-    # ✅ Step 6 – Apply Gradle Safe Patch (Crash Prevention)
+    # ✅ Step 6 - Apply Gradle Safe Patch (Crash Prevention)
     - name: 💙 Apply Gradle Safe Patch
       run: |
         echo "🔧 Patching Gradle settings for Visora AI Cloud..."
         echo "
         gradle.beforeProject { project ->
-            System.setProperty('kotlin.build.report.enabled', 'false')
-            System.setProperty('kotlin.daemon.enabled', 'false')
-            System.setProperty('org.gradle.unsafe.configuration-cache', 'false')
+          System.setProperty('kotlin.build.report.enabled', 'false')
+          System.setProperty('kotlin.daemon.enabled', 'false')
+          System.setProperty('org.gradle.unsafe.configuration-cache', 'false')
+          System.setProperty('systemProp.kotlin.gradle.plugin.statistics.disable', 'true')
         }
         gradle.rootProject {
-            try {
-                project.ext.properties.remove('buildFlowServiceProperty')
-                println('💙 buildFlowServiceProperty removed safely.')
-            } catch (ignored) {}
+          try {
+            project.ext.properties.remove('buildFlowServiceProperty')
+            println('💙 buildFlowServiceProperty removed safely.')
+          } catch (ignored) {}
         }
         gradle.settingsEvaluated {
-            System.setProperty('org.gradle.caching', 'true')
-            System.setProperty('org.gradle.parallel', 'true')
-            System.setProperty('org.gradle.jvmargs', '-Xmx3g -Dfile.encoding=UTF-8')
-            println('💨 CI optimization active.')
+          System.setProperty('org.gradle.caching', 'true')
+          System.setProperty('org.gradle.parallel', 'true')
+          System.setProperty('org.gradle.jvmargs', '-Xmx3g -Dfile.encoding=UTF-8')
+          println('☁️ CI optimization active.')
         }" >> android/settings.gradle
 
-    # ✅ Step 7 – Auto Create Firebase JSON from Secret
-    - name: 🔐 Create google-services.json from GitHub Secret
+    # ✅ Step 7 – Dynamic Firebase Config (No JSON File Needed)
+    - name: 🔐 Generate Firebase Config (Dynamic Secret)
       run: |
-        echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > android/app/google-services.json
-        echo "✅ Firebase google-services.json created."
+        echo "{
+          \"project_info\": {
+            \"project_id\": \"${{ secrets.FIREBASE_PROJECT_ID }}\",
+            \"storage_bucket\": \"${{ secrets.FIREBASE_STORAGE_BUCKET }}\"
+          },
+          \"client\": [{
+            \"client_info\": {
+              \"mobilesdk_app_id\": \"${{ secrets.FIREBASE_APP_ID }}\",
+              \"android_client_info\": {
+                \"package_name\": \"com.example.visora_ai_flutter\"
+              }
+            },
+            \"api_key\": [{
+              \"current_key\": \"${{ secrets.FIREBASE_API_KEY }}\"
+            }]
+          }],
+          \"configuration_version\": \"1\"
+        }" > android/app/google-services.json
+        echo "✅ Firebase Config file dynamically generated."
 
-    # ✅ Step 8 – Auto Create Missing Asset Folders
-    - name: 🗂️ Create Missing Asset Folders
+    # ✅ Step 8 - Auto Create Missing Asset Folders
+    - name: 🧾 Create Missing Asset Folders
       run: |
         mkdir -p assets/lottie assets/logo assets/icons assets/images
         touch assets/lottie/.keep assets/logo/.keep assets/icons/.keep assets/images/.keep
-        echo "✅ Asset folders verified and created."
+        echo "📁 Asset folders verified and created."
 
-    # ✅ Step 9 – Regenerate Flutter Plugin Dependencies
-    - name: 🔁 Regenerate Flutter Plugin Dependencies
+    # ✅ Step 9 - Regenerate Flutter Plugin Dependencies
+    - name: 🔄 Regenerate Flutter Plugin Dependencies
       run: |
-        echo "🔄 Regenerating .flutter-plugins-dependencies..."
+        echo "🔧 Regenerating .flutter-plugins-dependencies..."
         flutter pub get
         if [ ! -f .flutter-plugins-dependencies ]; then
           echo '{"plugins":{"ios":[],"android":[]}}' > .flutter-plugins-dependencies
@@ -92,21 +110,21 @@ jobs:
           echo "✅ Plugin file already exists."
         fi
 
-    # ✅ Step 10 – Build Release APK
+    # ✅ Step 10 - Build Release APK
     - name: 🚀 Build Visora AI Cloud Release APK
       run: |
-        echo "⚙️ Building Visora AI Cloud APK..."
+        echo "🏗️ Building Visora AI Cloud Release APK..."
         flutter build apk --release
-        echo "✅ Build Completed Successfully!"
+        echo "🎯 Build Completed Successfully!"
 
-    # ✅ Step 11 – Upload APK Artifact to GitHub
-    - name: ☁️ Upload APK Artifact to GitHub
+    # ✅ Step 11 - Upload APK Artifact to GitHub
+    - name: 📤 Upload APK Artifact to GitHub
       uses: actions/upload-artifact@v4
       with:
         name: VisoraAI-Cloud-Release
         path: build/app/outputs/flutter-apk/app-release.apk
 
-    # ✅ Step 12 – Auto Publish to GitHub Releases (Versioning)
+    # ✅ Step 12 - Auto Publish to GitHub Releases
     - name: 🚀 Publish to GitHub Releases
       if: startsWith(github.ref, 'refs/heads/main')
       uses: softprops/action-gh-release@v1
@@ -115,9 +133,9 @@ jobs:
         tag_name: v${{ github.run_number }}
         name: "Visora AI Cloud Build #${{ github.run_number }}"
         body: |
-          🌐 Visora AI Cloud Auto Build Successful!
-          ⚙️ Flutter SDK 3.19.6
-          ☁️ Cloud Optimization Enabled
-          🔒 Firebase Config Added via Secret
-          🧠 Asset Auto-Fix Active
-          💨 CI Build Ready (v${{ github.run_number }})
+          ☁️ Visora AI Cloud Auto Build Successful!
+          🔧 Firebase Config: Dynamic Secrets Enabled
+          ⚙️ Flutter SDK: 3.19.6
+          🧠 Cloud Optimization: Active
+          🧩 Auto Plugin & Asset Fix Enabled
+          🏁 CI Build Ready (v${{ github.run_number }})
