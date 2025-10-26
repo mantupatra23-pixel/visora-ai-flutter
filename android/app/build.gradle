@@ -1,4 +1,4 @@
-// 🚀 Visora AI Cloud v9.0 - Final Stable Build (No Error Version)
+// 🚀 Visora AI Cloud v9.1 (Final Stable No Error + Auto Icon Generator)
 
 buildscript {
     ext.kotlin_version = '1.9.22'
@@ -19,7 +19,7 @@ plugins {
     id 'com.google.gms.google-services'
 }
 
-// ✅ Smart Flutter Gradle Detection (Absolute + Fallback)
+// ✅ Smart Flutter Gradle Detection
 def flutterRoot = System.getenv("FLUTTER_ROOT") ?: "../../.."
 def flutterGradlePath = "${flutterRoot}/packages/flutter_tools/gradle/flutter.gradle"
 
@@ -38,7 +38,6 @@ if (file(flutterGradlePath).exists()) {
     apply from: tempGradle
 }
 
-// ✅ Android Configuration
 android {
     namespace "com.example.visora_ai_flutter"
     compileSdk 35
@@ -85,39 +84,50 @@ ext.flutter = [
     source: '../..'
 ]
 
-// ✅ Auto Resource Creator (Fixes ic_launcher issue)
+// ✅ Auto Icon & Resource Fix (Foreground + Background)
 gradle.taskGraph.whenReady {
-    def iconDir = file("${projectDir}/src/main/res/mipmap-anydpi-v26")
-    def valuesDir = file("${projectDir}/src/main/res/values")
+    def resDir = file("${projectDir}/src/main/res")
+    def mipmapDir = new File(resDir, "mipmap-anydpi-v26")
+    def valuesDir = new File(resDir, "values")
 
-    if (!iconDir.exists()) {
-        iconDir.mkdirs()
-        def iconFile = new File(iconDir, "ic_launcher.xml")
-        iconFile.text = """<?xml version="1.0" encoding="utf-8"?>
+    if (!mipmapDir.exists()) mipmapDir.mkdirs()
+    if (!valuesDir.exists()) valuesDir.mkdirs()
+
+    def foregroundFile = new File(resDir, "mipmap-anydpi-v26/ic_launcher_foreground.png")
+    def xmlFile = new File(mipmapDir, "ic_launcher.xml")
+    def colorFile = new File(valuesDir, "colors.xml")
+
+    // Create default foreground image (base64 → PNG)
+    if (!foregroundFile.exists()) {
+        println("🖼️ Generating default ic_launcher_foreground.png ...")
+        def base64Icon = "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABKklEQVR4Xu3UOwrCMBBF0Y3nAQNwwCJYAbvDgYswA0cwA0cwA0eYCERJ2Gv0tV2Gbd8nmzPb1vZdv6trK/1blnBNI9XhD7GmOOEAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEP4GbXWvIMgq9hnAqA6kxiAsKAZ4AAOiqgIov5hGcgAzQLwjVQoWYYwEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBBAIH/AZFc5Mt8SESTAAAAAElFTkSuQmCC"
+        foregroundFile.bytes = Base64.decoder.decode(base64Icon)
+        println("✅ Added default ic_launcher_foreground.png")
+    }
+
+    if (!xmlFile.exists()) {
+        xmlFile.text = """<?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@color/ic_launcher_background"/>
     <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
 </adaptive-icon>
 """
-        println("🆕 Created default ic_launcher.xml")
+        println("✅ Added default ic_launcher.xml")
     }
 
-    if (!valuesDir.exists()) {
-        valuesDir.mkdirs()
-        def colorFile = new File(valuesDir, "colors.xml")
+    if (!colorFile.exists()) {
         colorFile.text = """<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#FFFFFF</color>
+    <color name="ic_launcher_background">#1976D2</color>
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
-    <color name="primaryColor">#1976D2</color>
 </resources>
 """
-        println("🆕 Created default colors.xml")
+        println("✅ Added default colors.xml")
     }
 }
 
-// ✅ Firebase + Core Dependencies
+// ✅ Dependencies
 dependencies {
     implementation platform('com.google.firebase:firebase-bom:33.4.0')
     implementation 'com.google.firebase:firebase-analytics'
