@@ -1,20 +1,11 @@
-// ⚙️ Visora AI — Stable Cloud Build Configuration (Final)
+// 🚀 Visora AI – Stable Cloud Build Configuration (Final)
+
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
     id 'com.google.gms.google-services'
 }
 
-// ✅ Auto-detect Flutter SDK Path for both Cloud and Local builds
-def flutterSdkPath = System.getenv("FLUTTER_HOME") ?: "../../.."
-if (flutterSdkPath && new File(flutterSdkPath).exists()) {
-    apply from: "$flutterSdkPath/packages/flutter_tools/gradle/flutter.gradle"
-} else {
-    println("⚠️ Flutter SDK not found, using fallback relative path.")
-    apply from: "../../packages/flutter_tools/gradle/flutter.gradle"
-}
-
-// ✅ Android Configuration
 android {
     namespace "com.example.visora_ai_flutter"
     compileSdk 35
@@ -33,7 +24,7 @@ android {
             signingConfig signingConfigs.debug
             minifyEnabled false
             shrinkResources false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
         }
         debug {
             minifyEnabled false
@@ -56,12 +47,21 @@ android {
     }
 }
 
+// ✅ Auto-detect Flutter SDK Path (Works for both Cloud + Local)
+def flutterSdkPath = System.getenv("FLUTTER_HOME") ?: "../../.."
+if (flutterSdkPath && new File(flutterSdkPath + "/packages/flutter_tools/gradle/flutter.gradle").exists()) {
+    apply from: flutterSdkPath + "/packages/flutter_tools/gradle/flutter.gradle"
+} else {
+    println("⚠️ Flutter SDK not found, using fallback relative path.")
+    apply from: "../../packages/flutter_tools/gradle/flutter.gradle"
+}
+
 // ✅ Flutter Plugin Reference
 flutter {
     source '../..'
 }
 
-// ✅ Dependencies
+// ✅ Firebase + Android Dependencies
 dependencies {
     implementation platform('com.google.firebase:firebase-bom:33.4.0')
     implementation 'com.google.firebase:firebase-analytics'
