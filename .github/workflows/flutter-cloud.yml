@@ -1,4 +1,4 @@
-name: "Visora AI Cloud V8.1 – CloudRoot Path AutoFix + 100% Stable Build"
+name: "Visora AI Cloud V8.2 – Final Stable (Gradle 8.x Safe + Full Auto)"
 
 on:
   push:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # ✅ Step 1 - Checkout Repository
+    # ✅ Step 1 - Checkout
     - name: 📦 Checkout Repository
       uses: actions/checkout@v4
 
@@ -20,37 +20,34 @@ jobs:
       with:
         flutter-version: "3.19.6"
 
-    # ✅ Step 3 - Detect Flutter Root (Cloud Safe)
+    # ✅ Step 3 - Detect Flutter Root
     - name: 🔍 Detect Flutter Root
-      id: flutter-root
       run: |
+        echo "Detecting Flutter Root..."
         FLUTTER_PATH=$(which flutter)
         FLUTTER_ROOT=$(dirname $(dirname $FLUTTER_PATH))
-        echo "Flutter root: $FLUTTER_ROOT"
         echo "FLUTTER_ROOT=$FLUTTER_ROOT" >> $GITHUB_ENV
-        ls -l $FLUTTER_ROOT/packages/flutter_tools/gradle/ || true
+        echo "✅ Flutter Root found: $FLUTTER_ROOT"
 
-    # ✅ Step 4 - Copy flutter.gradle into Android folder (if missing)
-    - name: 🛠 Fix Missing flutter.gradle Path
+    # ✅ Step 4 - Patch Gradle (Cloud Safe)
+    - name: 🧠 Patch android/build.gradle (No flutter() errors)
       run: |
-        mkdir -p android/gradle/flutter_tools/gradle
-        if [ -f "$FLUTTER_ROOT/packages/flutter_tools/gradle/flutter.gradle" ]; then
-          cp $FLUTTER_ROOT/packages/flutter_tools/gradle/flutter.gradle android/gradle/flutter_tools/gradle/flutter.gradle
-          echo "✅ Copied flutter.gradle locally."
-        else
-          echo "⚠️ flutter.gradle not found in Flutter SDK, fallback skipped."
-        fi
-
-        # Patch android/app/build.gradle safely
+        echo "🧠 Patching Gradle file..."
         sed -i '/apply from/d' android/app/build.gradle || true
-        echo 'apply from: "../gradle/flutter_tools/gradle/flutter.gradle"' >> android/app/build.gradle
+        echo "// ✅ Flutter Gradle Cloud Safe Import" >> android/app/build.gradle
+        echo "def localFlutterGradle = file(\"../gradle/flutter_tools/gradle/flutter.gradle\")" >> android/app/build.gradle
+        echo "if (localFlutterGradle.exists()) {" >> android/app/build.gradle
+        echo "    apply from: localFlutterGradle" >> android/app/build.gradle
+        echo "} else {" >> android/app/build.gradle
+        echo "    apply from: System.getenv('FLUTTER_ROOT') + '/packages/flutter_tools/gradle/flutter.gradle'" >> android/app/build.gradle
+        echo "}" >> android/app/build.gradle
         echo "✅ build.gradle patched successfully."
 
-    # ✅ Step 5 - Get Dependencies
+    # ✅ Step 5 - Dependencies
     - name: 🔄 Install Dependencies
       run: flutter pub get
 
-    # ✅ Step 6 - Create Android Resources (Auto Safe)
+    # ✅ Step 6 - Auto Create Android Resources
     - name: 🎨 Create Android Resources
       run: |
         mkdir -p android/app/src/main/res/mipmap-anydpi-v26
@@ -77,10 +74,10 @@ jobs:
           </style>
         </resources>" > android/app/src/main/res/values/styles.xml
 
-        echo "✅ Android icons & themes ready."
+        echo "✅ Android icons + themes created."
 
     # ✅ Step 7 - Firebase Config
-    - name: 🔐 Firebase Config (Secrets)
+    - name: 🔐 Firebase Config
       run: |
         echo "{
           \"project_info\": {
@@ -99,9 +96,11 @@ jobs:
         }" > android/app/google-services.json
         echo "✅ Firebase Config added."
 
-    # ✅ Step 8 - Build APK (Retry Safe)
-    - name: 🚀 Build APK (Cloud Safe)
+    # ✅ Step 8 - Build APK
+    - name: 🚀 Build APK (Retry Safe)
       run: |
+        flutter clean
+        flutter pub get
         flutter build apk --release || (flutter clean && flutter pub get && flutter build apk --release)
         echo "🎯 Build completed successfully!"
 
@@ -121,8 +120,8 @@ jobs:
         tag_name: v${{ github.run_number }}
         name: "Visora AI Cloud Build #${{ github.run_number }}"
         body: |
-          ☁️ Visora AI Cloud V8.1 Build Successful!
-          🧠 FlutterRoot AutoFix Patched
-          🔐 Firebase Config Ready
-          🎨 Android Icons + Themes Generated
-          💙 Build Stable in Cloud
+          ☁️ Visora AI Cloud V8.2 Build Successful!
+          🔧 Gradle 8.x Safe
+          🎨 Icons + Themes Ready
+          🔐 Firebase Config Added
+          💙 Fully Cloud Compatible
