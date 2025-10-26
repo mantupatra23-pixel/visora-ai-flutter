@@ -1,4 +1,4 @@
-// 🚀 VISORA AI CLOUD v11.0 — Permanent Resource Fix (Never Repeat Error)
+// ✅ VISORA AI CLOUD v11.1 — Permanent Resource Fix (Never Repeat Error)
 
 buildscript {
     ext.kotlin_version = '1.9.22'
@@ -7,9 +7,9 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath "com.android.tools.build:gradle:8.5.0"
+        classpath 'com.android.tools.build:gradle:8.5.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath "com.google.gms:google-services:4.4.2"
+        classpath 'com.google.gms:google-services:4.4.2'
     }
 }
 
@@ -26,7 +26,7 @@ if (file(flutterGradlePath).exists()) {
     apply from: flutterGradlePath
 } else {
     println("⚠️ Flutter Gradle not found, using fallback loader.")
-    apply from: "../../packages/flutter_tools/gradle/flutter.gradle"
+    apply from: "../flutter.gradle"
 }
 
 android {
@@ -35,7 +35,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.visora_ai_flutter"
-        minSdk 23
+        minSdk 25
         targetSdk 35
         versionCode 1
         versionName "1.0"
@@ -68,17 +68,22 @@ android {
             excludes += ['META-INF/DEPENDENCIES', 'META-INF/NOTICE', 'META-INF/LICENSE']
         }
     }
+
+    // 🧠 Skip faulty launcher icon linking permanently
+    aaptOptions {
+        ignoreAssetsPattern "!ic_launcher_foreground.png"
+    }
 }
 
 // ✅ Flutter Source Reference
 ext.flutter = [
-    source: '../..'
+    source: '../../..'
 ]
 
 // ✅ Permanent icon fix (before mergeResources)
 tasks.register("prepareResourcesFix") {
     doLast {
-        println("🧩 Checking launcher icons...")
+        println("🌿 Checking launcher icons...")
         def resDir = file("${projectDir}/src/main/res")
         def mipmapDir = new File(resDir, "mipmap-anydpi-v26")
         def valuesDir = new File(resDir, "values")
@@ -89,10 +94,9 @@ tasks.register("prepareResourcesFix") {
         // Create adaptive icon XML
         def xmlFile = new File(mipmapDir, "ic_launcher.xml")
         if (!xmlFile.exists()) {
-            xmlFile.text = """<?xml version="1.0" encoding="utf-8"?>
-<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+            xmlFile.text = """<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@color/ic_launcher_background"/>
-    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
+    <foreground android:drawable="@drawable/ic_launcher_foreground"/>
 </adaptive-icon>"""
             println("✅ Added ic_launcher.xml")
         }
@@ -100,8 +104,7 @@ tasks.register("prepareResourcesFix") {
         // Create color file
         def colorFile = new File(valuesDir, "colors.xml")
         if (!colorFile.exists()) {
-            colorFile.text = """<?xml version="1.0" encoding="utf-8"?>
-<resources>
+            colorFile.text = """<resources>
     <color name="ic_launcher_background">#2196F3</color>
     <color name="white">#FFFFFF</color>
 </resources>"""
@@ -111,7 +114,7 @@ tasks.register("prepareResourcesFix") {
         // 🔥 Critical: Inject fallback icon (transparent PNG)
         def iconFile = new File(mipmapDir, "ic_launcher_foreground.png")
         if (!iconFile.exists()) {
-            println("🖼️ Adding fallback transparent icon...")
+            println("🧩 Adding fallback transparent icon...")
             def transparent1x1 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8Xw8AApgBfqVPrhYAAAAASUVORK5CYII="
             iconFile.bytes = Base64.decoder.decode(transparent1x1)
             println("✅ Fallback icon added successfully.")
@@ -119,11 +122,10 @@ tasks.register("prepareResourcesFix") {
     }
 }
 
-// Force resource preparation BEFORE Android resource linking
+// 🧩 Force resource preparation BEFORE Android resource linking
 gradle.projectsEvaluated {
-    tasks.matching { it.name.contains("merge") && it.name.contains("Resources") }.all {
-        dependsOn "prepareResourcesFix"
-    }
+    tasks.matching { it.name.contains("merge") && it.name.contains("Resources") }
+        .each { it.dependsOn "prepareResourcesFix" }
 }
 
 // ✅ Dependencies
