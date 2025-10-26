@@ -20,7 +20,7 @@ dependencies:
   path_provider: any
   share_plus: any
 
-  # 💫 UI & Animations
+  # 🎨 UI & Animations
   google_fonts: any
   flutter_svg: any
   lottie: any
@@ -31,7 +31,7 @@ dependencies:
   blur: any
   smooth_page_indicator: any
 
-  # 🔌 WebSocket (Render backend / live update)
+  # 🧠 WebSocket (Render backend / live update)
   web_socket_channel: any
 
   # ☁️ Firebase Cloud (Auth, Storage, Firestore, Messaging)
@@ -51,14 +51,17 @@ dependencies:
   just_audio: any
   audioplayers: any
 
-  # 🔢 JSON / Models / Providers
+  # 🧩 Cached Image Loader (Fix for profile screen)
+  cached_network_image: ^3.3.1
+
+  # 🧾 JSON / Models / Providers
   json_annotation: any
   provider: any
 
   # 🌍 URL & Launcher
   url_launcher: any
 
-  # 💎 In-App Purchases (for premium unlock)
+  # 💰 In-App Purchases (for premium unlock)
   in_app_purchase: any
 
   # 🔌 Device Info / Connectivity / Permissions
@@ -66,7 +69,7 @@ dependencies:
   permission_handler: any
   device_info_plus: any
 
-  # 🧠 Text / Speech / Translation
+  # 🗣️ Text / Speech / Translation
   translator: any
   speech_to_text: any
   flutter_tts: any
@@ -80,6 +83,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
   assets:
     - assets/lottie/
     - assets/logo/
