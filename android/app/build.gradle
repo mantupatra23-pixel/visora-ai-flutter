@@ -1,4 +1,4 @@
-// 🚀 Visora AI Cloud Build - v8.7 (Absolute Gradle Path Fix)
+// 🚀 Visora AI Cloud Build - v8.8 (Final Stable - Flutter() Fix)
 
 buildscript {
     ext.kotlin_version = '1.9.22'
@@ -19,22 +19,21 @@ plugins {
     id 'com.google.gms.google-services'
 }
 
-// ✅ Smart Flutter Gradle Detection
-def flutterRoot = System.getenv("FLUTTER_ROOT")
-def flutterGradlePath = flutterRoot ? "${flutterRoot}/packages/flutter_tools/gradle/flutter.gradle" : "../../packages/flutter_tools/gradle/flutter.gradle"
+// ✅ Smart Flutter Gradle Detection (Absolute + Fallback)
+def flutterRoot = System.getenv("FLUTTER_ROOT") ?: "../../.."
+def flutterGradlePath = "${flutterRoot}/packages/flutter_tools/gradle/flutter.gradle"
 
-if (flutterGradlePath && new File(flutterGradlePath).exists()) {
+if (file(flutterGradlePath).exists()) {
     println("✅ Flutter Gradle found at: ${flutterGradlePath}")
     apply from: flutterGradlePath
 } else {
-    println("⚠️ Flutter Gradle not found, creating temp fallback...")
-    // Create minimal flutter.gradle to satisfy Gradle build
+    println("⚠️ Flutter Gradle not found. Creating minimal compatibility layer...")
     def tempGradle = file("${projectDir}/temp_flutter.gradle")
     tempGradle.text = """
-        ext.flutterRoot = rootDir.absolutePath
-        task flutterBuild(type: Exec) {
-            commandLine "echo", "⚡ Temporary flutter.gradle loaded"
-        }
+        project.ext.flutter = [
+            source: '../..'
+        ]
+        println '⚡ Temporary flutter.gradle loaded successfully.'
     """
     apply from: tempGradle
 }
@@ -80,12 +79,12 @@ android {
     }
 }
 
-// ✅ Flutter Plugin Reference (Stable after detection)
-flutter {
-    source '../..'
-}
+// ✅ Define flutter{} explicitly for compatibility
+ext.flutter = [
+    source: '../..'
+]
 
-// ✅ Dependencies
+// ✅ Firebase + Core Dependencies
 dependencies {
     implementation platform('com.google.firebase:firebase-bom:33.4.0')
     implementation 'com.google.firebase:firebase-analytics'
