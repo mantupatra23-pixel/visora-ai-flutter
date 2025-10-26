@@ -18,15 +18,28 @@ jobs:
         with:
           flutter-version: '3.19.6'
 
-      - name: Clean cache and prepare
+      - name: 🔄 Clean and Rebuild Cache (Safe)
         run: |
+          echo "🧹 Cleaning Flutter cache..."
           rm -rf build .dart_tool pubspec.lock
+          flutter clean
           flutter pub get
+          flutter pub upgrade --major-versions
           flutter doctor -v
+          flutter pub deps
 
-      - name: Build APK in Low-Memory Mode
+      - name: 🧠 Verify Package Config
+        run: |
+          if [ ! -f ".dart_tool/package_config.json" ]; then
+            echo "⚙️ Regenerating package_config.json..."
+            flutter pub get
+          fi
+          ls -lh .dart_tool/ | grep package_config || echo "✅ Config verified"
+
+      - name: 🚀 Build APK (Stable Mode)
         env:
           _JAVA_OPTIONS: "-Xmx1024m -XX:+UseParallelGC"
           GRADLE_OPTS: "-Xmx1024m -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs='-Xmx1024m'"
         run: |
+          echo "🏗️ Starting Flutter release build..."
           flutter build apk --release --no-tree-shake-icons --verbose
