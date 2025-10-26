@@ -1,4 +1,4 @@
-name: "Visora AI Cloud V7.5 – Fully Automatic Flutter Build (Firebase + Auto Resource Fix + Cloud Retry)"
+name: "Visora AI Cloud V7.6 – Fully Automatic Flutter Build (Material3 Safe + Firebase + Retry System)"
 
 on:
   push:
@@ -68,14 +68,15 @@ jobs:
           println('☁️ CI optimization active.')
         }" >> android/settings.gradle
 
-    # ✅ Step 6.5 - Auto Fix Android Resources
-    - name: 🧩 Auto Fix Android Resources (ic_launcher & LaunchTheme)
+    # ✅ Step 6.5 - Auto Fix Android Resources (Material Theme Compatible)
+    - name: 🧩 Auto Fix Android Resources (Material3 Safe)
       run: |
         echo "🧩 Checking Android resource files..."
         mkdir -p android/app/src/main/res/mipmap-anydpi-v26
         mkdir -p android/app/src/main/res/values
+        mkdir -p android/app/src/main/res/values-night
 
-        # Recreate missing launcher icon
+        # Create ic_launcher if missing
         if [ ! -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml ]; then
           echo "<?xml version=\"1.0\" encoding=\"utf-8\"?>
           <adaptive-icon xmlns:android=\"http://schemas.android.com/apk/res/android\">
@@ -85,19 +86,36 @@ jobs:
           echo "🆕 Added default ic_launcher.xml"
         fi
 
-        # Recreate missing styles.xml with LaunchTheme
-        if [ ! -f android/app/src/main/res/values/styles.xml ]; then
-          echo "<?xml version=\"1.0\" encoding=\"utf-8\"?>
-          <resources>
-              <style name=\"LaunchTheme\" parent=\"Theme.Material3.Light.NoActionBar\">
-                  <item name=\"android:windowBackground\">@color/white</item>
-              </style>
-              <style name=\"NormalTheme\" parent=\"Theme.Material3.DayNight.NoActionBar\" />
-          </resources>" > android/app/src/main/res/values/styles.xml
-          echo "🆕 Added missing LaunchTheme in styles.xml"
-        fi
+        # Create base colors.xml
+        echo "<?xml version=\"1.0\" encoding=\"utf-8\"?>
+        <resources>
+            <color name=\"ic_launcher_background\">#FFFFFF</color>
+            <color name=\"white\">#FFFFFF</color>
+            <color name=\"black\">#000000</color>
+            <color name=\"primaryColor\">#1976D2</color>
+        </resources>" > android/app/src/main/res/values/colors.xml
 
-        echo "✅ Android resource files verified & fixed."
+        # Create styles.xml compatible with older Flutter Material versions
+        echo "<?xml version=\"1.0\" encoding=\"utf-8\"?>
+        <resources>
+            <style name=\"LaunchTheme\" parent=\"Theme.MaterialComponents.DayNight.NoActionBar\">
+                <item name=\"android:windowBackground\">@color/white</item>
+            </style>
+
+            <style name=\"NormalTheme\" parent=\"Theme.MaterialComponents.DayNight.NoActionBar\">
+                <item name=\"android:windowBackground\">@color/white</item>
+            </style>
+        </resources>" > android/app/src/main/res/values/styles.xml
+
+        # Create night mode styles (optional)
+        echo "<?xml version=\"1.0\" encoding=\"utf-8\"?>
+        <resources>
+            <style name=\"LaunchTheme\" parent=\"Theme.MaterialComponents.DayNight.NoActionBar\">
+                <item name=\"android:windowBackground\">@color/black</item>
+            </style>
+        </resources>" > android/app/src/main/res/values-night/styles.xml
+
+        echo "✅ Material3-safe Android resource files created successfully."
 
     # ✅ Step 7 – Full Dynamic Firebase Config (Secrets Based)
     - name: 🔐 Generate Firebase Config (Dynamic Secret)
@@ -167,7 +185,7 @@ jobs:
         body: |
           ☁️ Visora AI Cloud Auto Build Successful!
           🔐 Firebase Dynamic Config via Secrets
-          🧩 Auto Android Resource Fix Enabled
+          🧩 Material3 Safe Theme Applied
           ⚙️ Flutter SDK: 3.19.6
           💙 CI Cloud Optimization Ready
           🏁 Version v${{ github.run_number }}
