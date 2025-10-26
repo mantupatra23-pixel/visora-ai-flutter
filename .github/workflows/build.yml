@@ -18,12 +18,15 @@ jobs:
         with:
           flutter-version: '3.19.6'
 
-      - name: Clean previous caches
+      - name: Clean cache and prepare
         run: |
           rm -rf build .dart_tool pubspec.lock
           flutter pub get
           flutter doctor -v
 
-      - name: Build APK (Retry Safe)
+      - name: Build APK in Low-Memory Mode
+        env:
+          _JAVA_OPTIONS: "-Xmx1024m -XX:+UseParallelGC"
+          GRADLE_OPTS: "-Xmx1024m -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs='-Xmx1024m'"
         run: |
-          flutter build apk --release --verbose
+          flutter build apk --release --no-tree-shake-icons --verbose
