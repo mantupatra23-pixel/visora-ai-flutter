@@ -1,4 +1,4 @@
-// ⚙️ VISORA AI CLOUD V7 — UNIVERSAL SAFE BUILD (Stable for Flutter 3.19.6 / Gradle 8.9)
+// ⚙️ VISORA AI CLOUD V7.1 — FINAL GUARDED BUILD (Safe for CI + Flutter 3.19.6)
 
 pluginManagement {
     repositories {
@@ -26,7 +26,7 @@ dependencyResolutionManagement {
 rootProject.name = "visora_ai_flutter"
 include(":app")
 
-// ✅ Auto-detect Flutter SDK (for GitHub Actions)
+// ✅ Auto Flutter SDK detect
 def flutterSdkPath = System.getenv("FLUTTER_HOME") ?: "../../.."
 if (flutterSdkPath && new File(flutterSdkPath).exists()) {
     includeBuild(flutterSdkPath)
@@ -35,7 +35,7 @@ if (flutterSdkPath && new File(flutterSdkPath).exists()) {
     println("⚠️ Flutter SDK not found — using default runner SDK")
 }
 
-// ✅ Load plugin dependencies safely
+// ✅ Safe plugin loader
 import groovy.json.JsonSlurper
 def pluginFile = new File(rootDir, "../.flutter-plugins-dependencies")
 if (!pluginFile.exists()) {
@@ -50,19 +50,15 @@ try {
         def name = plugin.name
         def path = plugin.path
         if (name && path && new File(path).exists()) {
-            try {
-                include(":$name")
-                project(":$name").projectDir = new File(path)
-                println("🔗 Linked plugin safely: $name")
-            } catch (Throwable t) {
-                println("⚠️ Skipped linking: $name — ${t.message}")
-            }
+            include(":$name")
+            project(":$name").projectDir = new File(path)
+            println("🔗 Linked plugin safely: $name")
         } else {
-            // 🔧 Create a fake plugin directory (stub) so Flutter won’t fail
+            // 🧱 Create stub if missing
             def fakeDir = new File(rootDir, "stubs/$name")
             fakeDir.mkdirs()
             new File(fakeDir, "build.gradle").text = """
-                // 🧱 Stub plugin for $name (auto-created by Visora AI Cloud)
+                // 🧱 Stub plugin for $name (auto-created)
                 plugins { id 'com.android.library' }
                 android { compileSdkVersion 34 }
             """
@@ -72,24 +68,27 @@ try {
         }
     }
 } catch (Throwable t) {
-    println("⚠️ Plugin parse failed (safe mode): ${t.message}")
+    println("⚠️ Plugin parse failed (safe mode active): ${t.message}")
 }
 
-// ✅ Kotlin & Gradle safe properties
+// ✅ Disable BuildFlowService & Kotlin reports safely
 gradle.beforeProject { project ->
-    try {
-        System.setProperty("kotlin.build.report.enable", "false")
-        System.setProperty("kotlin.daemon.enabled", "false")
-        System.setProperty("kotlin.incremental", "false")
-        System.setProperty("org.gradle.unsafe.configuration-cache", "false")
-        System.setProperty("systemProp.kotlin.gradle.plugin.statistics.disable", "true")
-        project.extensions.extraProperties.set("visora_safe_mode", true)
-    } catch (Throwable t) {
-        println("⚠️ beforeProject skip: ${t.message}")
+    // 🔒 Run only for valid projects (not for settings)
+    if (project.hasProperty("name") && project.name != "settings") {
+        try {
+            System.setProperty("kotlin.build.report.enable", "false")
+            System.setProperty("kotlin.daemon.enabled", "false")
+            System.setProperty("kotlin.incremental", "false")
+            System.setProperty("org.gradle.unsafe.configuration-cache", "false")
+            System.setProperty("systemProp.kotlin.gradle.plugin.statistics.disable", "true")
+            project.extensions.extraProperties.set("visora_safe_mode", true)
+        } catch (Throwable t) {
+            println("⚠️ beforeProject skip: ${t.message}")
+        }
     }
 }
 
-// ✅ Disable BuildFlowService crashes
+// ✅ Safe BuildFlowService cleanup
 gradle.rootProject {
     try {
         project.ext.properties.remove("buildFlowServiceProperty")
@@ -97,19 +96,21 @@ gradle.rootProject {
     } catch (ignored) {}
 }
 
-// ✅ Global neutralizer (afterEvaluate crash prevent)
+// ✅ Global safe neutralization (skip settings)
 gradle.projectsLoaded {
-    allprojects.each { p ->
+    gradle.rootProject.allprojects.each { p ->
         try {
-            p.ext.set("afterEvaluate", { -> println("🧱 Neutralized afterEvaluate in ${p.name}") })
+            if (p != null && p.hasProperty("name")) {
+                p.ext.set("afterEvaluate", { -> println("🧱 Neutralized afterEvaluate in ${p.name}") })
+            }
         } catch (ignored) {}
     }
 }
 
-// ✅ Performance optimization
+// ✅ CI + Performance optimization
 gradle.settingsEvaluated {
     System.setProperty("org.gradle.caching", "true")
     System.setProperty("org.gradle.parallel", "true")
     System.setProperty("org.gradle.jvmargs", "-Xmx4g -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8")
-    println("💨 Visora AI Cloud V7 optimization enabled.")
+    println("💨 Visora AI Cloud V7.1 optimization enabled.")
 }
