@@ -40,13 +40,14 @@ USER builder
 WORKDIR /app
 RUN git config --global --add safe.directory /usr/local/flutter
 
-# ✅ Full removal of signing config and release references
-RUN sed -i '/signingConfigs {/,+10d' android/app/build.gradle || true
+# ✅ Clean up signing configs and build types fully
+RUN sed -i '/signingConfigs {/,+15d' android/app/build.gradle || true
 RUN sed -i '/signingConfig signingConfigs.release/d' android/app/build.gradle || true
 RUN sed -i '/buildTypes {/,+20d' android/app/build.gradle || true
 
-# ✅ Add simple buildTypes block to ensure no release dependency
-RUN echo "android { buildTypes { debug { debuggable true } } }" >> android/app/build.gradle
+# ✅ Inject safe minimal buildTypes inside main android block
+RUN sed -i '/defaultConfig {/a\        minSdkVersion 21\n        multiDexEnabled true' android/app/build.gradle || true
+RUN sed -i '/buildTypes {/a\        debug {\n            debuggable true\n        }' android/app/build.gradle || true
 
 # --- Build Debug APK ---
 RUN flutter build apk --debug --no-shrink
