@@ -10,39 +10,36 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 🧾 Step 1 - Checkout
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 🧠 Step 2 - Setup Flutter SDK
       - name: Setup Flutter SDK
         uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.19.6"
           channel: "stable"
 
-      # 🧩 Step 3 - Ensure .dart_tool exists (Fix pubspec issue)
       - name: Ensure Dart Tool Exists
         run: |
           mkdir -p .dart_tool
           flutter pub get || true
           echo "✅ .dart_tool and dependencies initialized."
 
-      # ⚙️ Step 4 - Patch Gradle (Cloud Safe)
       - name: Patch Gradle File
         run: |
           echo "🧱 Patching build.gradle..."
           if ! grep -q "flutter_tools/gradle/flutter.gradle" android/app/build.gradle; then
-            echo "def localFlutterGradle = file(\"../packages/flutter_tools/gradle/flutter.gradle\")" >> android/app/build.gradle
-            echo "if (localFlutterGradle.exists()) {" >> android/app/build.gradle
-            echo "  apply from: localFlutterGradle" >> android/app/build.gradle
-            echo "} else {" >> android/app/build.gradle
-            echo "  apply from: System.getenv('FLUTTER_ROOT') + '/packages/flutter_tools/gradle/flutter.gradle'" >> android/app/build.gradle
-            echo "}" >> android/app/build.gradle
+            cat <<'EOF' >> android/app/build.gradle
+def localFlutterGradle = file("../packages/flutter_tools/gradle/flutter.gradle")
+if (localFlutterGradle.exists()) {
+  apply from: localFlutterGradle
+} else {
+  apply from: System.getenv('FLUTTER_ROOT') + '/packages/flutter_tools/gradle/flutter.gradle'
+}
+EOF
           fi
           echo "✅ build.gradle patched successfully."
 
-      # 📦 Step 5 - Install Dependencies
       - name: Install Dependencies
         run: |
           flutter pub cache repair
@@ -51,51 +48,55 @@ jobs:
           flutter doctor -v
           echo "✅ Dependencies installed and cache fixed."
 
-      # 🎨 Step 6 - Create Android Resources (Auto)
       - name: Create Android Resources
         run: |
           mkdir -p android/app/src/main/res/mipmap-anydpi-v26
           mkdir -p android/app/src/main/res/values
-          echo '<?xml version="1.0" encoding="utf-8"?>
-          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-            <background android:drawable="@color/ic_launcher_background"/>
-            <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
-          </adaptive-icon>' > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
-          echo '<?xml version="1.0" encoding="utf-8"?>
-          <resources>
-            <color name="ic_launcher_background">#1976D2</color>
-            <color name="white">#FFFFFF</color>
-            <color name="black">#000000</color>
-          </resources>' > android/app/src/main/res/values/colors.xml
-          echo '<?xml version="1.0" encoding="utf-8"?>
-          <resources>
-            <style name="LaunchTheme" parent="android:Theme.Material.Light.NoActionBar">
-              <item name="android:windowBackground">@color/white</item>
-            </style>
-          </resources>' > android/app/src/main/res/values/styles.xml
+          cat <<'EOF' > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+  <background android:drawable="@color/ic_launcher_background"/>
+  <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
+</adaptive-icon>
+EOF
+          cat <<'EOF' > android/app/src/main/res/values/colors.xml
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <color name="ic_launcher_background">#1976D2</color>
+  <color name="white">#FFFFFF</color>
+  <color name="black">#000000</color>
+</resources>
+EOF
+          cat <<'EOF' > android/app/src/main/res/values/styles.xml
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <style name="LaunchTheme" parent="android:Theme.Material.Light.NoActionBar">
+    <item name="android:windowBackground">@color/white</item>
+  </style>
+</resources>
+EOF
           echo "✅ Android icons & themes created."
 
-      # 🔥 Step 7 - Firebase Config
       - name: Firebase Config
         run: |
-          echo '{
-            "project_info": {
-              "project_number": "${{ secrets.FIREBASE_PROJECT_NUMBER }}",
-              "project_id": "${{ secrets.FIREBASE_PROJECT_ID }}",
-              "storage_bucket": "${{ secrets.FIREBASE_STORAGE_BUCKET }}"
+          echo "🔥 Generating Firebase config..."
+          echo "{
+            \"project_info\": {
+              \"project_number\": \"${{ secrets.FIREBASE_PROJECT_NUMBER }}\",
+              \"project_id\": \"${{ secrets.FIREBASE_PROJECT_ID }}\",
+              \"storage_bucket\": \"${{ secrets.FIREBASE_STORAGE_BUCKET }}\"
             },
-            "client": [{
-              "client_info": {
-                "mobilesdk_app_id": "${{ secrets.FIREBASE_APP_ID }}",
-                "android_client_info": {"package_name": "com.example.visora"}
+            \"client\": [{
+              \"client_info\": {
+                \"mobilesdk_app_id\": \"${{ secrets.FIREBASE_APP_ID }}\",
+                \"android_client_info\": {\"package_name\": \"com.example.visora\"}
               },
-              "api_key": [{"current_key": "${{ secrets.FIREBASE_API_KEY }}"}]
+              \"api_key\": [{\"current_key\": \"${{ secrets.FIREBASE_API_KEY }}\"}]
             }],
-            "configuration_version": "1"
-          }' > android/app/google-services.json
+            \"configuration_version\": \"1\"
+          }" > android/app/google-services.json
           echo "✅ Firebase Config added."
 
-      # ⚙️ Step 8 - Build APK (Safe Retry)
       - name: Build APK
         run: |
           flutter clean
@@ -103,14 +104,12 @@ jobs:
           flutter build apk --release --no-tree-shake-icons || (flutter clean && flutter pub get && flutter build apk --release)
           echo "✅ Build completed successfully!"
 
-      # 📤 Step 9 - Upload Artifact
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: VisoraAI-Cloud-Release
           path: build/app/outputs/flutter-apk/app-release.apk
 
-      # ☁️ Step 10 - Optional Cloud Backup (Google Drive)
       - name: Upload to Cloud Backup (Google Drive)
         if: ${{ secrets.RCLONE_CONF != '' }}
         run: |
@@ -119,7 +118,6 @@ jobs:
           rclone copy build/app/outputs/flutter-apk/app-release.apk "mydrive:/VisoraAI/CloudBuilds/"
           echo "☁️ APK backed up to Google Drive successfully!"
 
-      # 🚀 Step 11 - Publish to GitHub Releases
       - name: Publish to GitHub Releases
         if: startsWith(github.ref, 'refs/heads/main')
         uses: softprops/action-gh-release@v1
