@@ -13,11 +13,9 @@ RUN mkdir -p /usr/lib/android-sdk/cmdline-tools && \
     unzip sdk-tools.zip && rm sdk-tools.zip && \
     mv cmdline-tools latest
 
-# Set environment variables
 ENV ANDROID_HOME=/usr/lib/android-sdk
 ENV PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:/usr/local/flutter/bin
 
-# Accept licenses and install build tools
 RUN yes | sdkmanager --licenses || true
 RUN sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
@@ -25,20 +23,16 @@ RUN sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34
 RUN git clone https://github.com/flutter/flutter.git -b stable /usr/local/flutter
 ENV PATH="/usr/local/flutter/bin:/usr/local/flutter/bin/cache/dart-sdk/bin:${PATH}"
 
-# Prepare Flutter
 RUN flutter doctor -v
 
-# Copy project files
 COPY . .
 
-# Create local.properties with SDK path
 RUN mkdir -p android && echo "sdk.dir=/usr/lib/android-sdk" > android/local.properties
 
-# Clean and get packages
 RUN flutter clean
 RUN flutter pub get
 
-# ✅ Disable signing and build universal APK
-RUN flutter build apk --release --no-shrink
+# 🔹 Build a debug APK instead of release (no signing)
+RUN flutter build apk --debug
 
 CMD ["bash"]
