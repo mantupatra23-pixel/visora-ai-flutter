@@ -40,11 +40,15 @@ USER builder
 WORKDIR /app
 RUN git config --global --add safe.directory /usr/local/flutter
 
-# ✅ Disable release signing config dynamically
-RUN sed -i '/signingConfigs {/,+6d' android/app/build.gradle || true
+# ✅ Full removal of signing config and release references
+RUN sed -i '/signingConfigs {/,+10d' android/app/build.gradle || true
 RUN sed -i '/signingConfig signingConfigs.release/d' android/app/build.gradle || true
+RUN sed -i '/buildTypes {/,+20d' android/app/build.gradle || true
 
-# --- Build Debug APK (unsigned) ---
+# ✅ Add simple buildTypes block to ensure no release dependency
+RUN echo "android { buildTypes { debug { debuggable true } } }" >> android/app/build.gradle
+
+# --- Build Debug APK ---
 RUN flutter build apk --debug --no-shrink
 
 # --- Switch back to root and copy APK ---
