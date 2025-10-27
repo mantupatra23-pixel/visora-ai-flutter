@@ -36,18 +36,18 @@ RUN flutter pub get
 
 # --- Create builder user and fix permissions ---
 RUN useradd -m builder && chown -R builder:builder /app /usr/local/flutter
-
-# --- Switch to builder user ---
 USER builder
 WORKDIR /app
-
-# 🧩 Fix Git ownership for builder user (the real fix)
 RUN git config --global --add safe.directory /usr/local/flutter
 
-# --- Build Debug APK ---
-RUN flutter build apk --debug
+# ✅ Disable release signing config dynamically
+RUN sed -i '/signingConfigs {/,+6d' android/app/build.gradle || true
+RUN sed -i '/signingConfig signingConfigs.release/d' android/app/build.gradle || true
 
-# --- Switch back to root for copying APK ---
+# --- Build Debug APK (unsigned) ---
+RUN flutter build apk --debug --no-shrink
+
+# --- Switch back to root and copy APK ---
 USER root
 RUN cp /app/build/app/outputs/flutter-apk/app-debug.apk /app/app-debug.apk || true
 
