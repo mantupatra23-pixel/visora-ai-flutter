@@ -1,4 +1,4 @@
-name: "Visora AI Cloud V8.3.4 – Fully Stable (Final Tested)"
+name: "Visora AI Cloud V8.3.5 – Final Stable (Full Auto)"
 
 on:
   push:
@@ -92,10 +92,20 @@ jobs:
           }" > android/app/google-services.json
           echo "✅ Firebase config created."
 
-      - name: ⚙️ Build APK
+      - name: ⚙️ Build APK (Final Cloud Fix)
         run: |
-          flutter build apk --release --no-tree-shake-icons || (flutter clean && flutter pub get && flutter build apk --release)
-          echo "✅ APK build completed successfully!"
+          echo "🧹 Cleaning and rebuilding..."
+          rm -rf .dart_tool
+          flutter clean
+          flutter pub cache repair
+          flutter pub get
+          flutter pub upgrade --major-versions
+          flutter doctor -v
+          echo "🧠 Regenerating plugin registrant..."
+          flutter pub run build_runner build --delete-conflicting-outputs || true
+          echo "🚀 Starting release build..."
+          flutter build apk --release --no-tree-shake-icons
+          echo "✅ Build completed successfully!"
 
       - name: 💾 Upload Artifact
         uses: actions/upload-artifact@v4
@@ -104,16 +114,14 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
 
       - name: ☁️ Cloud Backup (Optional)
-        if: ${{ env.RCLONE_CONF_AVAILABLE == 'true' }}
+        if: ${{ secrets.RCLONE_CONF != '' }}
         env:
           RCLONE_CONF: ${{ secrets.RCLONE_CONF }}
-          RCLONE_CONF_AVAILABLE: ${{ secrets.RCLONE_CONF != '' && 'true' || 'false' }}
         run: |
-          echo "☁️ Starting Cloud Backup..."
           sudo apt-get install -y rclone
           echo "$RCLONE_CONF" > ~/.config/rclone/rclone.conf
           rclone copy build/app/outputs/flutter-apk/app-release.apk "mydrive:/VisoraAI/CloudBuilds/"
-          echo "✅ APK backed up to cloud."
+          echo "☁️ Cloud backup complete."
 
       - name: 🚀 Publish to GitHub Releases
         if: startsWith(github.ref, 'refs/heads/main')
