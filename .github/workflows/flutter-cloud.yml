@@ -1,8 +1,8 @@
-name: "🚀 Visora AI Cloud V8.4 (Final Stable — No Telegram)"
+name: "🚀 Visora AI Cloud V8.4 — Final Stable Build (No Telegram)"
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 env:
@@ -16,30 +16,25 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      # 1) Checkout
       - name: 📦 Checkout Repository
         uses: actions/checkout@v4
 
-      # 2) Setup Flutter SDK
       - name: 🧠 Setup Flutter SDK
         uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.19.6"
           channel: "stable"
 
-      # 3) Prepare environment
       - name: 🧰 Prepare Environment
         run: |
           mkdir -p .dart_tool
           flutter pub get || true
           echo "✅ Flutter environment prepared."
 
-      # 4) Patch Gradle (cloud-safe)
       - name: 🛠️ Patch Gradle File
         run: |
-          echo "🔧 Patching android/app/build.gradle (cloud-safe)..."
+          echo "🔧 Patching android/app/build.gradle..."
           sed -i '/apply from/d' android/app/build.gradle || true
           cat <<'EOF' >> android/app/build.gradle
 def localFlutterGradle = file('../packages/flutter_tools/gradle/flutter.gradle')
@@ -49,9 +44,8 @@ if (localFlutterGradle.exists()) {
   apply from: System.getenv('FLUTTER_ROOT') + '/packages/flutter_tools/gradle/flutter.gradle'
 }
 EOF
-          echo "✅ Gradle patch done."
+          echo "✅ Gradle patch complete."
 
-      # 5) Install dependencies
       - name: 🍀 Install Dependencies
         run: |
           flutter clean
@@ -59,20 +53,21 @@ EOF
           flutter doctor -v
           echo "✅ Dependencies installed."
 
-      # 6) Create Android resources (adaptive icon + colors + styles)
       - name: 🎨 Create Android Resources
         run: |
           mkdir -p android/app/src/main/res/mipmap-anydpi-v26
           mkdir -p android/app/src/main/res/values
           mkdir -p android/app/src/main/res/values-night
-          cat > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml <<EOF
+
+          cat > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml <<'EOF'
 <?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
   <background android:drawable="@color/ic_launcher_background"/>
   <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
 </adaptive-icon>
 EOF
-          cat > android/app/src/main/res/values/colors.xml <<EOF
+
+          cat > android/app/src/main/res/values/colors.xml <<'EOF'
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <color name="ic_launcher_background">#1976D2</color>
@@ -80,7 +75,8 @@ EOF
   <color name="black">#000000</color>
 </resources>
 EOF
-          cat > android/app/src/main/res/values/styles.xml <<EOF
+
+          cat > android/app/src/main/res/values/styles.xml <<'EOF'
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <style name="LaunchTheme" parent="android:Theme.Material.Light.NoActionBar">
@@ -90,10 +86,9 @@ EOF
 EOF
           echo "✅ Android resources created."
 
-      # 7) Firebase config (created from secrets)
       - name: 🔥 Firebase Config
         run: |
-          echo "🔥 Generating android/app/google-services.json..."
+          echo "🔥 Generating Firebase config..."
           cat > android/app/google-services.json <<EOF
 {
   "project_info": {
@@ -103,58 +98,55 @@ EOF
   },
   "client": [{
     "mobilesdk_app_id": "${FIREBASE_APP_ID}",
-    "client_info": {"package_name": "com.example.visora_ai_flutter"},
-    "api_key": [{ "current_key": "${FIREBASE_API_KEY}" }]
+    "client_info": {
+      "package_name": "com.example.visora_ai_flutter"
+    },
+    "api_key": [{
+      "current_key": "${FIREBASE_API_KEY}"
+    }]
   }],
   "configuration_version": "1"
 }
 EOF
           echo "✅ Firebase config created."
 
-      # 8) Full Flutter sync + self-healing (clean caches, regen registrant)
-      - name: 🧩 Full Flutter Sync (Self-Healing)
+      - name: 🧩 Full Flutter Sync
         run: |
-          echo "🧩 Cleaning caches and syncing dependencies..."
+          echo "🔄 Cleaning caches and syncing..."
           rm -rf .dart_tool build pubspec.lock android/.gradle
           flutter clean
           flutter pub cache repair
           flutter pub get
-          flutter pub outdated || true
           flutter pub upgrade --major-versions || true
-          echo "🧠 Regenerating plugin registrant (if used)..."
           dart pub get || true
           dart run build_runner build --delete-conflicting-outputs || true
           flutter doctor -v
-          echo "✅ Dependencies fully synced."
+          echo "✅ Sync complete."
 
-      # 9) Build APK (optimized; increases Gradle memory if needed)
-      - name: ⚙️ Build APK (Final Optimized)
+      - name: ⚙️ Build APK
         run: |
-          echo "🧹 Preparing optimized Gradle properties..."
-          # ensure sufficient memory and stable settings
+          echo "🧠 Optimizing Gradle memory..."
           echo "org.gradle.jvmargs=-Xmx6g -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8" >> android/gradle.properties
           echo "org.gradle.daemon=false" >> android/gradle.properties
           echo "android.enableDexingArtifactTransform=false" >> android/gradle.properties
           echo "android.useAndroidX=true" >> android/gradle.properties
           echo "android.enableJetifier=true" >> android/gradle.properties
 
-          echo "🚀 Building APK (release)..."
+          echo "🚀 Building release APK..."
           flutter build apk --release --no-tree-shake-icons --verbose || (
-            echo "⚠️ First build failed — retrying after cleaning..."
+            echo "⚠️ Retry after clean..."
             flutter clean
             flutter pub get
             flutter build apk --release --no-tree-shake-icons --verbose
           )
-          echo "✅ APK build completed successfully!"
+          echo "✅ Build completed successfully."
 
-      # 10) Upload artifact
       - name: 📦 Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: VisoraAI-Cloud-Release
           path: build/app/outputs/flutter-apk/app-release.apk
 
-      # 11) Optional cloud backup via rclone (if RCLONE_CONF secret set)
       - name: ☁️ Cloud Backup (Optional)
         if: ${{ env.RCLONE_CONF != '' }}
         run: |
@@ -163,9 +155,8 @@ EOF
           mkdir -p ~/.config/rclone
           echo "${RCLONE_CONF}" > ~/.config/rclone/rclone.conf
           rclone copy build/app/outputs/flutter-apk/app-release.apk "mydrive:VisoraAI-Cloud" || true
-          echo "✅ Cloud backup attempted."
+          echo "✅ Cloud backup done."
 
-      # 12) Publish to GitHub Releases (if main branch)
       - name: 🚀 Publish to GitHub Releases
         if: startsWith(github.ref, 'refs/heads/main')
         uses: softprops/action-gh-release@v1
