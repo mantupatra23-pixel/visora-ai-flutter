@@ -1,4 +1,4 @@
-name: "🚀 Visora AI Cloud V8.4 (Final Stable + Telegram Notify)"
+name: "🚀 Visora AI Cloud V8.4 (Final Stable — No Telegram)"
 
 on:
   push:
@@ -6,16 +6,12 @@ on:
   workflow_dispatch:
 
 env:
-  # Firebase & optional rclone (set these as repo secrets)
   FIREBASE_PROJECT_NUMBER: ${{ secrets.FIREBASE_PROJECT_NUMBER }}
   FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
   FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
   FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
   FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
   RCLONE_CONF: ${{ secrets.RCLONE_CONF }}
-  # Telegram notify (set as secrets)
-  TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
 jobs:
   build:
@@ -44,7 +40,6 @@ jobs:
       - name: 🛠️ Patch Gradle File
         run: |
           echo "🔧 Patching android/app/build.gradle (cloud-safe)..."
-          # remove existing 'apply from' lines to avoid duplicates
           sed -i '/apply from/d' android/app/build.gradle || true
           cat <<'EOF' >> android/app/build.gradle
 def localFlutterGradle = file('../packages/flutter_tools/gradle/flutter.gradle')
@@ -70,14 +65,14 @@ EOF
           mkdir -p android/app/src/main/res/mipmap-anydpi-v26
           mkdir -p android/app/src/main/res/values
           mkdir -p android/app/src/main/res/values-night
-          cat > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml <<'EOF'
+          cat > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml <<EOF
 <?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
   <background android:drawable="@color/ic_launcher_background"/>
   <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
 </adaptive-icon>
 EOF
-          cat > android/app/src/main/res/values/colors.xml <<'EOF'
+          cat > android/app/src/main/res/values/colors.xml <<EOF
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <color name="ic_launcher_background">#1976D2</color>
@@ -85,7 +80,7 @@ EOF
   <color name="black">#000000</color>
 </resources>
 EOF
-          cat > android/app/src/main/res/values/styles.xml <<'EOF'
+          cat > android/app/src/main/res/values/styles.xml <<EOF
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <style name="LaunchTheme" parent="android:Theme.Material.Light.NoActionBar">
@@ -184,21 +179,3 @@ EOF
             🔥 Firebase Ready
             ⚙️ Gradle 8.x + Kotlin 1.9.25
             ☁️ Full Cloud Compatible
-
-      # 13) Telegram notification (optional) — sends Release URL + Run URL
-      - name: 🔔 Telegram Notify (optional)
-        if: ${{ env.TELEGRAM_BOT_TOKEN != '' && env.TELEGRAM_CHAT_ID != '' && startsWith(github.ref, 'refs/heads/main') }}
-        run: |
-          echo "🔔 Sending Telegram notification..."
-          REPO="${GITHUB_REPOSITORY}"
-          RUN_ID="${GITHUB_RUN_ID}"
-          RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-          RELEASE_TAG="v${{ github.run_number }}"
-          RELEASE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${RELEASE_TAG}"
-          MESSAGE="✅ <b>Visora AI Cloud Build #${{ github.run_number }}</b> successful.%0A%0A🔹 <a href='${RELEASE_URL}'>Download Release</a>%0A🔹 <a href='${RUN_URL}'>Open Workflow Run</a>"
-          # send
-          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-            -d chat_id="${TELEGRAM_CHAT_ID}" \
-            -d parse_mode="HTML" \
-            -d text="${MESSAGE}" || true
-          echo "✅ Telegram notify attempted."
