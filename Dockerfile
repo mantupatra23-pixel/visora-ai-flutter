@@ -37,7 +37,7 @@ COPY . .
 RUN flutter pub get
 
 # Build release APK
-RUN flutter build apk --release --no-sound-null-safety
+RUN flutter build apk --release
 
 # Default command
 CMD ["bash"]
