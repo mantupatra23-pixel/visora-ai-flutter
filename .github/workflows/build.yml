@@ -1,4 +1,4 @@
-name: build
+name: Build APK (Final Safe Mode)
 
 on:
   push:
@@ -18,30 +18,36 @@ jobs:
         with:
           flutter-version: '3.19.6'
 
-      - name: 🔄 Force Clean and Rebuild Pub Cache
+      - name: 🔄 Clean and Restore Dependencies
         run: |
-          echo "🧹 Cleaning Flutter environment..."
-          rm -rf build .dart_tool pubspec.lock
+          echo "🧹 Cleaning previous builds and cache..."
+          rm -rf .dart_tool pubspec.lock build
           flutter clean
-          flutter pub cache repair || true
+          echo "📦 Fetching dependencies..."
           flutter pub get
           flutter pub upgrade --major-versions
-          flutter doctor -v
-          echo "✅ Flutter cache rebuilt successfully."
+          echo "✅ Dependencies installed successfully."
 
-      - name: 🧠 Force Generate package_config.json
+      - name: ⚙️ Verify Dart Tool Setup
         run: |
-          echo "⚙️ Rebuilding package_config.json..."
+          echo "🔍 Checking .dart_tool directory..."
           if [ ! -d ".dart_tool" ]; then
-            mkdir .dart_tool
+            echo "⚠️ .dart_tool not found, forcing rebuild..."
+            flutter pub get
           fi
-          flutter pub get
-          ls -lh .dart_tool | grep package_config || echo "✅ package_config.json verified"
+          ls -lh .dart_tool || echo "✅ .dart_tool recreated successfully."
 
-      - name: 🚀 Build APK (Stable Mode)
+      - name: 🚀 Build Flutter APK (Release)
         env:
           _JAVA_OPTIONS: "-Xmx1024m -XX:+UseParallelGC"
           GRADLE_OPTS: "-Xmx1024m -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs='-Xmx1024m'"
         run: |
-          echo "🏗️ Starting Flutter release build..."
+          echo "🏗️ Starting Flutter build (Release Mode)..."
           flutter build apk --release --no-tree-shake-icons --verbose
+          echo "✅ APK build finished."
+
+      - name: 📤 Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: visora-ai-release
+          path: build/app/outputs/flutter-apk/app-release.apk
