@@ -22,7 +22,6 @@ RUN sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34
 RUN git clone https://github.com/flutter/flutter.git -b stable /usr/local/flutter
 ENV PATH="/usr/local/flutter/bin:/usr/local/flutter/bin/cache/dart-sdk/bin:${PATH}"
 
-# --- Preload Flutter ---
 RUN flutter doctor -v
 
 # --- Copy project ---
@@ -31,19 +30,24 @@ COPY . .
 # --- Android config ---
 RUN mkdir -p android && echo "sdk.dir=/usr/lib/android-sdk" > android/local.properties
 
-# --- Clean and fetch packages ---
+# --- Clean and get packages ---
 RUN flutter clean
 RUN flutter pub get
 
-# --- Fix permission & safe directory trust for builder user ---
-RUN useradd -m builder && chown -R builder:builder /app && \
-    git config --global --add safe.directory /usr/local/flutter
+# --- Create builder user and fix permissions ---
+RUN useradd -m builder && chown -R builder:builder /app /usr/local/flutter
 
-# --- Switch user for build ---
+# --- Switch to builder user ---
 USER builder
+WORKDIR /app
+
+# 🧩 Fix Git ownership for builder user (the real fix)
+RUN git config --global --add safe.directory /usr/local/flutter
+
+# --- Build Debug APK ---
 RUN flutter build apk --debug
 
-# --- Switch back to root and copy APK ---
+# --- Switch back to root for copying APK ---
 USER root
 RUN cp /app/build/app/outputs/flutter-apk/app-debug.apk /app/app-debug.apk || true
 
