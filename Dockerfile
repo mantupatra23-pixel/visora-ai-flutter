@@ -1,7 +1,5 @@
-# Base image
 FROM ubuntu:22.04
 
-# Set working directory
 WORKDIR /app
 
 # Install dependencies
@@ -33,11 +31,13 @@ RUN flutter doctor -v
 # Copy project files
 COPY . .
 
+# ✅ Create local.properties file for Android SDK path
+RUN echo "sdk.dir=/usr/lib/android-sdk" > android/local.properties
+
 # Get dependencies
 RUN flutter pub get
 
 # Build release APK
 RUN flutter build apk --release
 
-# Default command
 CMD ["bash"]
