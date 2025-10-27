@@ -1,4 +1,4 @@
-name: Visora AI Cloud V8.5 Final Stable
+name: Visora AI Cloud - Final Stable (Parse Safe)
 
 on:
   push:
@@ -17,101 +17,65 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Flutter SDK
+      - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.19.6"
-          channel: stable
+          channel: "stable"
 
-      - name: Prepare Environment
+      - name: Prepare environment
         run: |
+          # ensure dart tool folder exists and try a safe pub get
           mkdir -p .dart_tool
           flutter pub get || true
-          echo "Flutter environment prepared."
 
-      - name: Patch Gradle File
+      - name: Patch android build.gradle safely
         run: |
-          echo "Patching Gradle..."
+          # remove previous apply-from lines to avoid duplicates
           sed -i '/apply from/d' android/app/build.gradle || true
-          cat <<'EOF' >> android/app/build.gradle
-def localFlutterGradle = file('../packages/flutter_tools/gradle/flutter.gradle')
-if (localFlutterGradle.exists()) {
-  apply from: localFlutterGradle
-} else {
-  apply from: System.getenv('FLUTTER_ROOT') + '/packages/flutter_tools/gradle/flutter.gradle'
-}
-EOF
-          echo "Gradle patch complete."
+          # append a safe apply-from block
+          printf "%s\n" "def localFlutterGradle = file('../packages/flutter_tools/gradle/flutter.gradle')" >> android/app/build.gradle
+          printf "%s\n" "if (localFlutterGradle.exists()) {" >> android/app/build.gradle
+          printf "%s\n" "  apply from: localFlutterGradle" >> android/app/build.gradle
+          printf "%s\n" "} else {" >> android/app/build.gradle
+          printf "%s\n" "  apply from: System.getenv('FLUTTER_ROOT') + '/packages/flutter_tools/gradle/flutter.gradle'" >> android/app/build.gradle
+          printf "%s\n" "}" >> android/app/build.gradle
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: |
           flutter clean
           flutter pub get
           flutter doctor -v
-          echo "Dependencies installed."
 
-      - name: Create Android Resources
+      - name: Create small Android resources (safe)
         run: |
           mkdir -p android/app/src/main/res/mipmap-anydpi-v26
           mkdir -p android/app/src/main/res/values
-          mkdir -p android/app/src/main/res/values-night
-          cat > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml <<'EOF'
-<?xml version="1.0" encoding="utf-8"?>
-<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-  <background android:drawable="@color/ic_launcher_background"/>
-  <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
-</adaptive-icon>
-EOF
-          cat > android/app/src/main/res/values/colors.xml <<'EOF'
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-  <color name="ic_launcher_background">#1976D2</color>
-  <color name="white">#FFFFFF</color>
-  <color name="black">#000000</color>
-</resources>
-EOF
-          cat > android/app/src/main/res/values/styles.xml <<'EOF'
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-  <style name="LaunchTheme" parent="android:Theme.Material.Light.NoActionBar">
-    <item name="android:windowBackground">@color/white</item>
-  </style>
-</resources>
-EOF
-          echo "Android resources created."
+          # create minimal xml files using printf to avoid heredoc
+          printf '<?xml version="1.0" encoding="utf-8"?><adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@color/ic_launcher_background"/><foreground android:drawable="@mipmap/ic_launcher_foreground"/></adaptive-icon>' > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          printf '<?xml version="1.0" encoding="utf-8"?><resources><color name="ic_launcher_background">#1976D2</color><color name="white">#FFFFFF</color><color name="black">#000000</color></resources>' > android/app/src/main/res/values/colors.xml
+          printf '<?xml version="1.0" encoding="utf-8"?><resources><style name="LaunchTheme" parent="android:Theme.Material.Light.NoActionBar"><item name="android:windowBackground">@color/white</item></style></resources>' > android/app/src/main/res/values/styles.xml
 
-      - name: Firebase Config
+      - name: Generate firebase json (safe)
         run: |
-          echo "Generating Firebase config..."
-          cat > android/app/google-services.json <<EOF
-{
-  "project_info": {
-    "project_number": "${FIREBASE_PROJECT_NUMBER}",
-    "project_id": "${FIREBASE_PROJECT_ID}",
-    "storage_bucket": "${FIREBASE_STORAGE_BUCKET}"
-  },
-  "client": [{
-    "mobilesdk_app_id": "${FIREBASE_APP_ID}",
-    "client_info": {
-      "package_name": "com.example.visora_ai_flutter"
-    },
-    "api_key": [{
-      "current_key": "${FIREBASE_API_KEY}"
-    }]
-  }],
-  "configuration_version": "1"
-}
-EOF
-          echo "Firebase config created."
+          # build a small JSON file using printf and environment variables
+          printf '{' > android/app/google-services.json
+          printf '"project_info":{' >> android/app/google-services.json
+          printf '"project_number":"%s",' "${FIREBASE_PROJECT_NUMBER}" >> android/app/google-services.json
+          printf '"project_id":"%s",' "${FIREBASE_PROJECT_ID}" >> android/app/google-services.json
+          printf '"storage_bucket":"%s"' "${FIREBASE_STORAGE_BUCKET}" >> android/app/google-services.json
+          printf '},' >> android/app/google-services.json
+          printf '"client":[{"mobilesdk_app_id":"%s","client_info":{"package_name":"com.example.visora_ai_flutter"},"api_key":[{"current_key":"%s"}]}],' "${FIREBASE_APP_ID}" "${FIREBASE_API_KEY}" >> android/app/google-services.json
+          printf '"configuration_version":"1"}' >> android/app/google-services.json
 
-      - name: Full Flutter Sync
+      - name: Full flutter sync (repair)
         run: |
-          echo "Cleaning and syncing dependencies..."
-          rm -rf .dart_tool build pubspec.lock android/.gradle
+          rm -rf .dart_tool build pubspec.lock android/.gradle || true
           flutter clean
           flutter pub cache repair
           flutter pub get
@@ -119,41 +83,35 @@ EOF
           dart pub get || true
           dart run build_runner build --delete-conflicting-outputs || true
           flutter doctor -v
-          echo "Flutter sync complete."
 
-      - name: Build APK
+      - name: Configure gradle limits and build
         run: |
-          echo "Configuring Gradle properties..."
-          echo "org.gradle.jvmargs=-Xmx6g -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8" >> android/gradle.properties
-          echo "org.gradle.daemon=false" >> android/gradle.properties
-          echo "android.enableDexingArtifactTransform=false" >> android/gradle.properties
-          echo "android.useAndroidX=true" >> android/gradle.properties
-          echo "android.enableJetifier=true" >> android/gradle.properties
-          flutter build apk --release --no-tree-shake-icons --verbose || (
-            echo "Retrying build after clean..."
-            flutter clean
-            flutter pub get
-            flutter build apk --release --no-tree-shake-icons --verbose
-          )
-          echo "APK build complete."
+          # ensure gradle properties for CI stability
+          printf 'org.gradle.jvmargs=-Xmx6g -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8\n' >> android/gradle.properties
+          printf 'org.gradle.daemon=false\n' >> android/gradle.properties
+          printf 'android.enableDexingArtifactTransform=false\n' >> android/gradle.properties
+          printf 'android.useAndroidX=true\n' >> android/gradle.properties
+          printf 'android.enableJetifier=true\n' >> android/gradle.properties
 
-      - name: Upload Artifact
+          # build with retry
+          flutter build apk --release --no-tree-shake-icons --verbose || (flutter clean && flutter pub get && flutter build apk --release --no-tree-shake-icons --verbose)
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: VisoraAI-Cloud-Release
           path: build/app/outputs/flutter-apk/app-release.apk
 
-      - name: Cloud Backup
+      - name: Optional rclone backup
         if: ${{ env.RCLONE_CONF != '' }}
         run: |
           sudo apt-get update -y
           sudo apt-get install -y rclone
           mkdir -p ~/.config/rclone
-          echo "${RCLONE_CONF}" > ~/.config/rclone/rclone.conf
+          printf "%s" "${RCLONE_CONF}" > ~/.config/rclone/rclone.conf
           rclone copy build/app/outputs/flutter-apk/app-release.apk "mydrive:VisoraAI-Cloud" || true
-          echo "Cloud backup done."
 
-      - name: Publish to GitHub Releases
+      - name: Publish release (main branch)
         if: startsWith(github.ref, 'refs/heads/main')
         uses: softprops/action-gh-release@v1
         with:
@@ -162,7 +120,4 @@ EOF
           name: Visora AI Cloud Build #${{ github.run_number }}
           body: |
             Visora AI Cloud Build Successful
-            Self-Healing Build System
-            Firebase Ready
-            Gradle 8.x + Kotlin 1.9.25
-            Full Cloud Compatible
+            Self-Healing Build
