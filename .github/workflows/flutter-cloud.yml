@@ -1,4 +1,4 @@
-name: "Visora AI Cloud V8.3.1 – Final Stable (Full Auto + Cloud Backup)"
+name: "Visora AI Cloud V8.3.2 – Final Stable (Cloud Safe)"
 
 on:
   push:
@@ -10,56 +10,53 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      - name: 🧾 Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Flutter SDK
+      - name: 🧠 Setup Flutter SDK
         uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.19.6"
           channel: "stable"
 
-      - name: Ensure Dart Tool Exists
+      - name: 📦 Prepare Environment
         run: |
           mkdir -p .dart_tool
           flutter pub get || true
-          echo "✅ .dart_tool and dependencies initialized."
+          echo "✅ Flutter environment prepared."
 
-      - name: Patch Gradle File
+      - name: 🔧 Patch Gradle
         run: |
-          echo "🧱 Patching build.gradle..."
+          echo "🧱 Patching Gradle for cloud safety..."
           if ! grep -q "flutter_tools/gradle/flutter.gradle" android/app/build.gradle; then
-            cat <<'EOF' >> android/app/build.gradle
-def localFlutterGradle = file("../packages/flutter_tools/gradle/flutter.gradle")
-if (localFlutterGradle.exists()) {
-  apply from: localFlutterGradle
-} else {
-  apply from: System.getenv('FLUTTER_ROOT') + '/packages/flutter_tools/gradle/flutter.gradle'
-}
-EOF
+            echo "def localFlutterGradle = file('../packages/flutter_tools/gradle/flutter.gradle')" >> android/app/build.gradle
+            echo "if (localFlutterGradle.exists()) {" >> android/app/build.gradle
+            echo "  apply from: localFlutterGradle" >> android/app/build.gradle
+            echo "} else {" >> android/app/build.gradle
+            echo "  apply from: System.getenv('FLUTTER_ROOT') + '/packages/flutter_tools/gradle/flutter.gradle'" >> android/app/build.gradle
+            echo "}" >> android/app/build.gradle
           fi
           echo "✅ build.gradle patched successfully."
 
-      - name: Install Dependencies
+      - name: 🧹 Install Dependencies
         run: |
-          flutter pub cache repair
           flutter clean
           flutter pub get
           flutter doctor -v
-          echo "✅ Dependencies installed and cache fixed."
+          echo "✅ Dependencies fixed and installed."
 
-      - name: Create Android Resources
+      - name: 🎨 Create Android Resources
         run: |
           mkdir -p android/app/src/main/res/mipmap-anydpi-v26
           mkdir -p android/app/src/main/res/values
-          cat <<'EOF' > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          cat > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml <<'EOF'
 <?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
   <background android:drawable="@color/ic_launcher_background"/>
   <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
 </adaptive-icon>
 EOF
-          cat <<'EOF' > android/app/src/main/res/values/colors.xml
+          cat > android/app/src/main/res/values/colors.xml <<'EOF'
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <color name="ic_launcher_background">#1976D2</color>
@@ -67,58 +64,58 @@ EOF
   <color name="black">#000000</color>
 </resources>
 EOF
-          cat <<'EOF' > android/app/src/main/res/values/styles.xml
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-  <style name="LaunchTheme" parent="android:Theme.Material.Light.NoActionBar">
-    <item name="android:windowBackground">@color/white</item>
-  </style>
-</resources>
+          echo "✅ Android icon resources created."
+
+      - name: 🔥 Firebase Config
+        env:
+          FIREBASE_PROJECT_NUMBER: ${{ secrets.FIREBASE_PROJECT_NUMBER }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+          FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+        run: |
+          echo "🧩 Generating Firebase config..."
+          cat > android/app/google-services.json <<EOF
+{
+  "project_info": {
+    "project_number": "$FIREBASE_PROJECT_NUMBER",
+    "project_id": "$FIREBASE_PROJECT_ID",
+    "storage_bucket": "$FIREBASE_STORAGE_BUCKET"
+  },
+  "client": [{
+    "client_info": {
+      "mobilesdk_app_id": "$FIREBASE_APP_ID",
+      "android_client_info": { "package_name": "com.example.visora" }
+    },
+    "api_key": [{ "current_key": "$FIREBASE_API_KEY" }]
+  }],
+  "configuration_version": "1"
+}
 EOF
-          echo "✅ Android icons & themes created."
+          echo "✅ Firebase config file created successfully."
 
-      - name: Firebase Config
+      - name: ⚙️ Build APK
         run: |
-          echo "🔥 Generating Firebase config..."
-          echo "{
-            \"project_info\": {
-              \"project_number\": \"${{ secrets.FIREBASE_PROJECT_NUMBER }}\",
-              \"project_id\": \"${{ secrets.FIREBASE_PROJECT_ID }}\",
-              \"storage_bucket\": \"${{ secrets.FIREBASE_STORAGE_BUCKET }}\"
-            },
-            \"client\": [{
-              \"client_info\": {
-                \"mobilesdk_app_id\": \"${{ secrets.FIREBASE_APP_ID }}\",
-                \"android_client_info\": {\"package_name\": \"com.example.visora\"}
-              },
-              \"api_key\": [{\"current_key\": \"${{ secrets.FIREBASE_API_KEY }}\"}]
-            }],
-            \"configuration_version\": \"1\"
-          }" > android/app/google-services.json
-          echo "✅ Firebase Config added."
-
-      - name: Build APK
-        run: |
-          flutter clean
-          flutter pub get
           flutter build apk --release --no-tree-shake-icons || (flutter clean && flutter pub get && flutter build apk --release)
           echo "✅ Build completed successfully!"
 
-      - name: Upload Artifact
+      - name: 💾 Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: VisoraAI-Cloud-Release
           path: build/app/outputs/flutter-apk/app-release.apk
 
-      - name: Upload to Cloud Backup (Google Drive)
+      - name: ☁️ Cloud Backup (Optional)
         if: ${{ secrets.RCLONE_CONF != '' }}
+        env:
+          RCLONE_CONF: ${{ secrets.RCLONE_CONF }}
         run: |
           sudo apt-get install -y rclone
-          echo "${{ secrets.RCLONE_CONF }}" > ~/.config/rclone/rclone.conf
+          echo "$RCLONE_CONF" > ~/.config/rclone/rclone.conf
           rclone copy build/app/outputs/flutter-apk/app-release.apk "mydrive:/VisoraAI/CloudBuilds/"
-          echo "☁️ APK backed up to Google Drive successfully!"
+          echo "☁️ Cloud backup complete."
 
-      - name: Publish to GitHub Releases
+      - name: 🚀 Publish to GitHub Releases
         if: startsWith(github.ref, 'refs/heads/main')
         uses: softprops/action-gh-release@v1
         with:
@@ -128,7 +125,6 @@ EOF
           body: |
             ✅ Visora AI Cloud Build Successful!
             🔹 Gradle 8.x + Kotlin 1.9.25
+            🔹 Firebase Auto Config
             🔹 Pub Cache Fixed
-            🔹 Firebase Ready
-            🔹 Auto Icons + Themes
             🔹 Full Cloud Compatible
