@@ -1,4 +1,4 @@
-name: "Visora AI Cloud V8.3.7 – Final Stable (Self-Healing Cloud Build)"
+name: "🚀 Visora AI Cloud V8.3.7 – Final Stable (Self-Healing Cloud Build)"
 
 on:
   push:
@@ -18,24 +18,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🧾 Checkout Repository
+      # 1️⃣ Checkout Repository
+      - name: 📦 Checkout Repository
         uses: actions/checkout@v4
 
+      # 2️⃣ Setup Flutter SDK
       - name: 🧠 Setup Flutter SDK
         uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.19.6"
           channel: "stable"
 
-      - name: 📦 Prepare Environment
+      # 3️⃣ Prepare Environment
+      - name: 🧰 Prepare Environment
         run: |
           mkdir -p .dart_tool
           flutter pub get || true
           echo "✅ Flutter environment prepared."
 
-      - name: 🔧 Patch Gradle File
+      # 4️⃣ Patch Gradle File
+      - name: 🛠️ Patch Gradle File
         run: |
-          echo "🧱 Patching Gradle..."
+          echo "🔧 Patching Gradle..."
+          sed -i '/apply from/d' android/app/build.gradle || true
           echo "def localFlutterGradle = file('../packages/flutter_tools/gradle/flutter.gradle')" >> android/app/build.gradle
           echo "if (localFlutterGradle.exists()) {" >> android/app/build.gradle
           echo "  apply from: localFlutterGradle" >> android/app/build.gradle
@@ -44,28 +49,33 @@ jobs:
           echo "}" >> android/app/build.gradle
           echo "✅ Gradle patch done."
 
-      - name: 🧹 Install Dependencies
+      # 5️⃣ Install Dependencies
+      - name: 🍀 Install Dependencies
         run: |
           flutter clean
           flutter pub get
           flutter doctor -v
           echo "✅ Dependencies installed."
 
+      # 6️⃣ Create Android Resources
       - name: 🎨 Create Android Resources
         run: |
           mkdir -p android/app/src/main/res/mipmap-anydpi-v26
           mkdir -p android/app/src/main/res/values
+          mkdir -p android/app/src/main/res/values-night
           echo '<?xml version="1.0" encoding="utf-8"?>
           <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
             <background android:drawable="@color/ic_launcher_background"/>
             <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
           </adaptive-icon>' > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+
           echo '<?xml version="1.0" encoding="utf-8"?>
           <resources>
             <color name="ic_launcher_background">#1976D2</color>
             <color name="white">#FFFFFF</color>
             <color name="black">#000000</color>
           </resources>' > android/app/src/main/res/values/colors.xml
+
           echo '<?xml version="1.0" encoding="utf-8"?>
           <resources>
             <style name="LaunchTheme" parent="android:Theme.Material.Light.NoActionBar">
@@ -74,6 +84,7 @@ jobs:
           </resources>' > android/app/src/main/res/values/styles.xml
           echo "✅ Android resources created."
 
+      # 7️⃣ Firebase Config
       - name: 🔥 Firebase Config
         run: |
           echo "🔥 Generating Firebase config..."
@@ -84,48 +95,48 @@ jobs:
               \"storage_bucket\": \"${FIREBASE_STORAGE_BUCKET}\"
             },
             \"client\": [{
-              \"client_info\": {
-                \"mobilesdk_app_id\": \"${FIREBASE_APP_ID}\",
-                \"android_client_info\": {\"package_name\": \"com.example.visora\"}
-              },
+              \"mobilesdk_app_id\": \"${FIREBASE_APP_ID}\",
+              \"client_info\": {\"package_name\": \"com.example.visora_ai_flutter\"},
               \"api_key\": [{\"current_key\": \"${FIREBASE_API_KEY}\"}]
             }],
             \"configuration_version\": \"1\"
           }" > android/app/google-services.json
           echo "✅ Firebase config created."
 
-      - name: ⚙️ Build APK (Self-Healing Cloud Fix)
+      # 8️⃣ Build APK (Self-Healing Cloud Fix)
+      - name: 🧩 Build APK (Self-Healing Cloud Fix)
         run: |
-          echo "🧹 Starting clean self-healing build..."
+          echo "🧩 Starting clean self-healing build..."
           rm -rf .dart_tool pubspec.lock build
           flutter clean
           flutter pub cache repair
           flutter pub get
-          dart pub get
           flutter pub outdated || true
           flutter pub upgrade --major-versions || true
           echo "🧠 Regenerating plugin registrant..."
           dart run build_runner build --delete-conflicting-outputs || true
-          echo "🧪 Verifying dependencies..."
           flutter doctor -v
           echo "🚀 Building APK..."
           flutter build apk --release --no-tree-shake-icons --verbose
           echo "✅ Build completed successfully!"
 
-      - name: 💾 Upload Artifact
+      # 9️⃣ Upload Artifact
+      - name: 📦 Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: VisoraAI-Cloud-Release
           path: build/app/outputs/flutter-apk/app-release.apk
 
+      # 🔟 Cloud Backup (Optional)
       - name: ☁️ Cloud Backup (Optional)
         if: ${{ env.RCLONE_CONF != '' }}
         run: |
           sudo apt-get install -y rclone
           echo "${RCLONE_CONF}" > ~/.config/rclone/rclone.conf
-          rclone copy build/app/outputs/flutter-apk/app-release.apk "mydrive:/VisoraAI/CloudBuilds/"
-          echo "☁️ Cloud backup complete."
+          rclone copy build/app/outputs/flutter-apk/app-release.apk "mydrive:VisoraAI-Cloud"
+          echo "✅ Cloud backup complete."
 
+      # 11️⃣ Publish to GitHub Releases
       - name: 🚀 Publish to GitHub Releases
         if: startsWith(github.ref, 'refs/heads/main')
         uses: softprops/action-gh-release@v1
@@ -135,8 +146,7 @@ jobs:
           name: "Visora AI Cloud Build #${{ github.run_number }}"
           body: |
             ✅ Visora AI Cloud Build Successful!
-            🔹 Self-Healing Build System
-            🔹 Firebase Ready
-            🔹 Gradle 8.x + Kotlin 1.9.25
-            🔹 Pub Cache + Plugin Repair
-            🔹 Full Cloud Compatible
+            🧠 Self-Healing Build System
+            🔥 Firebase Ready
+            ⚙️ Gradle 8.x + Kotlin 1.9.25
+            ☁️ Full Cloud Compatibility
