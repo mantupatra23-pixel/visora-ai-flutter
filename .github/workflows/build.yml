@@ -1,4 +1,4 @@
-name: Build APK (Final Safe Mode)
+name: Build APK (Stable & Low Memory Mode)
 
 on:
   push:
@@ -8,45 +8,50 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: 🧾 Checkout Repository
         uses: actions/checkout@v4
 
-      - name: 🧰 Setup Flutter SDK
+      - name: ⚙️ Setup Flutter SDK
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.19.6'
 
-      - name: 🔄 Clean and Restore Dependencies
+      - name: 🧹 Clean Project
         run: |
-          echo "🧹 Cleaning previous builds and cache..."
+          echo "🧼 Cleaning Flutter and Gradle..."
           rm -rf .dart_tool pubspec.lock build
           flutter clean
-          echo "📦 Fetching dependencies..."
+
+      - name: 🔧 Install Dependencies
+        run: |
+          echo "📦 Running flutter pub get..."
           flutter pub get
-          flutter pub upgrade --major-versions
-          echo "✅ Dependencies installed successfully."
+          echo "✅ Dependencies installed."
 
-      - name: ⚙️ Verify Dart Tool Setup
+      - name: ⚙️ Gradle Memory Optimization
         run: |
-          echo "🔍 Checking .dart_tool directory..."
-          if [ ! -d ".dart_tool" ]; then
-            echo "⚠️ .dart_tool not found, forcing rebuild..."
-            flutter pub get
-          fi
-          ls -lh .dart_tool || echo "✅ .dart_tool recreated successfully."
+          echo "🧠 Applying memory optimization..."
+          echo "org.gradle.daemon=false" >> android/gradle.properties
+          echo "org.gradle.parallel=false" >> android/gradle.properties
+          echo "org.gradle.configureondemand=false" >> android/gradle.properties
+          echo "org.gradle.jvmargs=-Xmx1024m -XX:+UseParallelGC -Dkotlin.daemon.jvm.options=-Xmx512m" >> android/gradle.properties
+          echo "android.useAndroidX=true" >> android/gradle.properties
+          echo "android.enableJetifier=true" >> android/gradle.properties
+          echo "✅ Gradle memory fix applied."
 
-      - name: 🚀 Build Flutter APK (Release)
+      - name: 🧱 Build Release APK (Low Memory Safe)
         env:
-          _JAVA_OPTIONS: "-Xmx1024m -XX:+UseParallelGC"
-          GRADLE_OPTS: "-Xmx1024m -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs='-Xmx1024m'"
+          JAVA_OPTS: "-Xmx1024m"
+          GRADLE_OPTS: "-Xmx1024m -Dorg.gradle.daemon=false"
         run: |
-          echo "🏗️ Starting Flutter build (Release Mode)..."
-          flutter build apk --release --no-tree-shake-icons --verbose
-          echo "✅ APK build finished."
+          echo "🚀 Building release APK safely..."
+          flutter build apk --release --no-tree-shake-icons --verbose || flutter build apk --release --no-tree-shake-icons -v
+          echo "✅ Build complete."
 
-      - name: 📤 Upload APK Artifact
+      - name: 📤 Upload Release APK
         uses: actions/upload-artifact@v4
         with:
           name: visora-ai-release
