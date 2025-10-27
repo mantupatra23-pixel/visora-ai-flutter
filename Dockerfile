@@ -40,14 +40,28 @@ USER builder
 WORKDIR /app
 RUN git config --global --add safe.directory /usr/local/flutter
 
-# ✅ Clean up signing configs and build types fully
-RUN sed -i '/signingConfigs {/,+15d' android/app/build.gradle || true
-RUN sed -i '/signingConfig signingConfigs.release/d' android/app/build.gradle || true
+# ✅ Remove old signing/buildType configs completely
+RUN sed -i '/signingConfigs {/,+20d' android/app/build.gradle || true
 RUN sed -i '/buildTypes {/,+20d' android/app/build.gradle || true
 
-# ✅ Inject safe minimal buildTypes inside main android block
-RUN sed -i '/defaultConfig {/a\        minSdkVersion 21\n        multiDexEnabled true' android/app/build.gradle || true
-RUN sed -i '/buildTypes {/a\        debug {\n            debuggable true\n        }' android/app/build.gradle || true
+# ✅ Inject a full clean Gradle structure (no missing path)
+RUN echo "\
+android {\n\
+    compileSdkVersion 34\n\
+    defaultConfig {\n\
+        applicationId \"com.visora.ai\"\n\
+        minSdkVersion 21\n\
+        targetSdkVersion 34\n\
+        versionCode 1\n\
+        versionName \"1.0\"\n\
+        multiDexEnabled true\n\
+    }\n\
+    buildTypes {\n\
+        debug {\n\
+            debuggable true\n\
+        }\n\
+    }\n\
+}" >> android/app/build.gradle
 
 # --- Build Debug APK ---
 RUN flutter build apk --debug --no-shrink
