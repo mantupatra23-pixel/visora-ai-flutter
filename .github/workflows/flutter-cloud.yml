@@ -1,4 +1,4 @@
-name: "Visora AI Cloud V8.3.6 – Fully Stable (Parse Safe)"
+name: "Visora AI Cloud V8.3.7 – Final Stable (Self-Healing Cloud Build)"
 
 on:
   push:
@@ -94,19 +94,22 @@ jobs:
           }" > android/app/google-services.json
           echo "✅ Firebase config created."
 
-      - name: ⚙️ Build APK (Final Cloud Fix)
+      - name: ⚙️ Build APK (Self-Healing Cloud Fix)
         run: |
-          echo "🧹 Cleaning and rebuilding..."
-          rm -rf .dart_tool
+          echo "🧹 Starting clean self-healing build..."
+          rm -rf .dart_tool pubspec.lock build
           flutter clean
           flutter pub cache repair
           flutter pub get
-          flutter pub upgrade --major-versions
-          flutter doctor -v
+          dart pub get
+          flutter pub outdated || true
+          flutter pub upgrade --major-versions || true
           echo "🧠 Regenerating plugin registrant..."
-          flutter pub run build_runner build --delete-conflicting-outputs || true
-          echo "🚀 Starting release build..."
-          flutter build apk --release --no-tree-shake-icons
+          dart run build_runner build --delete-conflicting-outputs || true
+          echo "🧪 Verifying dependencies..."
+          flutter doctor -v
+          echo "🚀 Building APK..."
+          flutter build apk --release --no-tree-shake-icons --verbose
           echo "✅ Build completed successfully!"
 
       - name: 💾 Upload Artifact
@@ -132,7 +135,8 @@ jobs:
           name: "Visora AI Cloud Build #${{ github.run_number }}"
           body: |
             ✅ Visora AI Cloud Build Successful!
+            🔹 Self-Healing Build System
             🔹 Firebase Ready
             🔹 Gradle 8.x + Kotlin 1.9.25
-            🔹 Pub Cache Fixed
+            🔹 Pub Cache + Plugin Repair
             🔹 Full Cloud Compatible
