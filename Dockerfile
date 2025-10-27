@@ -27,43 +27,61 @@ RUN flutter doctor -v
 # --- Copy project ---
 COPY . .
 
-# --- Android config ---
+# --- Android SDK Path ---
 RUN mkdir -p android && echo "sdk.dir=/usr/lib/android-sdk" > android/local.properties
 
-# --- Clean and get packages ---
+# --- Flutter clean & dependencies ---
 RUN flutter clean
 RUN flutter pub get
 
-# --- Create builder user and fix permissions ---
+# --- Create non-root user ---
 RUN useradd -m builder && chown -R builder:builder /app /usr/local/flutter
 USER builder
 WORKDIR /app
 RUN git config --global --add safe.directory /usr/local/flutter
 
-# ✅ Remove old signing/buildType configs completely
-RUN sed -i '/signingConfigs {/,+20d' android/app/build.gradle || true
-RUN sed -i '/buildTypes {/,+20d' android/app/build.gradle || true
-
-# ✅ Inject a full clean Gradle structure (no missing path)
-RUN echo "\
+# ✅ Overwrite build.gradle with clean valid config
+RUN echo '\
+def localProperties = new Properties()\n\
+def localPropertiesFile = rootProject.file("local.properties")\n\
+if (localPropertiesFile.exists()) {\n\
+    localPropertiesFile.withReader("UTF-8") { reader -> localProperties.load(reader) }\n\
+}\n\
+\n\
+def flutterRoot = localProperties.getProperty("flutter.sdk")\n\
+if (flutterRoot == null) {\n\
+    throw new GradleException("Flutter SDK not found. Define location with flutter.sdk in the local.properties file.")\n\
+}\n\
+\n\
+apply plugin: "com.android.application"\n\
+apply plugin: "kotlin-android"\n\
+apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"\n\
+\n\
 android {\n\
     compileSdkVersion 34\n\
+\n\
     defaultConfig {\n\
-        applicationId \"com.visora.ai\"\n\
+        applicationId "com.visora.ai"\n\
         minSdkVersion 21\n\
         targetSdkVersion 34\n\
         versionCode 1\n\
-        versionName \"1.0\"\n\
+        versionName "1.0"\n\
         multiDexEnabled true\n\
     }\n\
+\n\
     buildTypes {\n\
         debug {\n\
             debuggable true\n\
         }\n\
     }\n\
-}" >> android/app/build.gradle
+}\n\
+\n\
+flutter {\n\
+    source "../.."\n\
+}\n\
+' > android/app/build.gradle
 
-# --- Build Debug APK ---
+# --- Build APK ---
 RUN flutter build apk --debug --no-shrink
 
 # --- Switch back to root and copy APK ---
