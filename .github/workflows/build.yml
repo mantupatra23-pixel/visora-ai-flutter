@@ -10,39 +10,38 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      - name: 🧾 Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Flutter SDK
+      - name: 🧰 Setup Flutter SDK
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.19.6'
 
-      - name: 🔧 Clean and Warm-up Flutter
+      - name: 🔄 Force Clean and Rebuild Pub Cache
         run: |
-          echo "🧹 Cleaning environment..."
+          echo "🧹 Cleaning Flutter environment..."
           rm -rf build .dart_tool pubspec.lock
           flutter clean
+          flutter pub cache repair || true
           flutter pub get
           flutter pub upgrade --major-versions
           flutter doctor -v
-          echo "🔥 Pre-warming Flutter build system..."
-          flutter build apk --debug || true
+          echo "✅ Flutter cache rebuilt successfully."
 
-      - name: 🧠 Verify Dart Tool Exists
+      - name: 🧠 Force Generate package_config.json
         run: |
-          if [ ! -f ".dart_tool/package_config.json" ]; then
-            echo "⚙️ Regenerating package_config.json..."
-            flutter pub get
-          else
-            echo "✅ package_config.json found."
+          echo "⚙️ Rebuilding package_config.json..."
+          if [ ! -d ".dart_tool" ]; then
+            mkdir .dart_tool
           fi
-          ls -lh .dart_tool | grep package_config || echo "✅ Verified .dart_tool folder."
+          flutter pub get
+          ls -lh .dart_tool | grep package_config || echo "✅ package_config.json verified"
 
-      - name: 🚀 Build APK (Stable Release)
+      - name: 🚀 Build APK (Stable Mode)
         env:
           _JAVA_OPTIONS: "-Xmx1024m -XX:+UseParallelGC"
           GRADLE_OPTS: "-Xmx1024m -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs='-Xmx1024m'"
         run: |
-          echo "🏗️ Building release APK..."
+          echo "🏗️ Starting Flutter release build..."
           flutter build apk --release --no-tree-shake-icons --verbose
