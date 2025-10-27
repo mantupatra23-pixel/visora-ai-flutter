@@ -1,4 +1,4 @@
-name: "Visora AI Cloud V8.2 – Final Stable (Gradle 8.x Safe + Full Auto)"
+name: "Visora AI Cloud V8.3 – Final Stable (Gradle 8.x + Full Auto)"
 
 on:
   push:
@@ -10,45 +10,49 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # ✅ Step 1 - Checkout
-    - name: 📦 Checkout Repository
+    # 🧱 Step 1 – Checkout
+    - name: 🧱 Checkout Repository
       uses: actions/checkout@v4
 
-    # ✅ Step 2 - Setup Flutter SDK
+    # 🧩 Step 2 – Setup Flutter SDK
     - name: 🧩 Setup Flutter SDK
       uses: subosito/flutter-action@v2
       with:
         flutter-version: "3.19.6"
 
-    # ✅ Step 3 - Detect Flutter Root
+    # 🔍 Step 3 – Detect Flutter Root
     - name: 🔍 Detect Flutter Root
       run: |
-        echo "Detecting Flutter Root..."
+        echo "🔎 Detecting Flutter Root..."
         FLUTTER_PATH=$(which flutter)
         FLUTTER_ROOT=$(dirname $(dirname $FLUTTER_PATH))
         echo "FLUTTER_ROOT=$FLUTTER_ROOT" >> $GITHUB_ENV
         echo "✅ Flutter Root found: $FLUTTER_ROOT"
 
-    # ✅ Step 4 - Patch Gradle (Cloud Safe)
-    - name: 🧠 Patch android/build.gradle (No flutter() errors)
+    # ⚙️ Step 4 – Patch Gradle (Cloud Safe)
+    - name: ⚙️ Patch Gradle File
       run: |
-        echo "🧠 Patching Gradle file..."
+        echo "🛠️ Patching build.gradle..."
         sed -i '/apply from/d' android/app/build.gradle || true
-        echo "// ✅ Flutter Gradle Cloud Safe Import" >> android/app/build.gradle
+        echo "// Flutter Gradle Cloud Safe Import" >> android/app/build.gradle
         echo "def localFlutterGradle = file(\"../gradle/flutter_tools/gradle/flutter.gradle\")" >> android/app/build.gradle
         echo "if (localFlutterGradle.exists()) {" >> android/app/build.gradle
         echo "    apply from: localFlutterGradle" >> android/app/build.gradle
         echo "} else {" >> android/app/build.gradle
-        echo "    apply from: System.getenv('FLUTTER_ROOT') + '/packages/flutter_tools/gradle/flutter.gradle'" >> android/app/build.gradle
+        echo "    apply from: System.getenv(\"FLUTTER_ROOT\") + \"/packages/flutter_tools/gradle/flutter.gradle\"" >> android/app/build.gradle
         echo "}" >> android/app/build.gradle
         echo "✅ build.gradle patched successfully."
 
-    # ✅ Step 5 - Dependencies
-    - name: 🔄 Install Dependencies
-      run: flutter pub get
+    # 📦 Step 5 – Dependencies (Fix pub cache)
+    - name: 📦 Install Dependencies
+      run: |
+        flutter pub cache repair
+        flutter clean
+        flutter pub get
+        flutter doctor -v
 
-    # ✅ Step 6 - Auto Create Android Resources
-    - name: 🎨 Create Android Resources
+    # 🖼️ Step 6 – Auto Create Android Resources
+    - name: 🖼️ Create Android Resources
       run: |
         mkdir -p android/app/src/main/res/mipmap-anydpi-v26
         mkdir -p android/app/src/main/res/values
@@ -56,28 +60,28 @@ jobs:
 
         echo "<?xml version=\"1.0\" encoding=\"utf-8\"?>
         <adaptive-icon xmlns:android=\"http://schemas.android.com/apk/res/android\">
-          <background android:drawable=\"@color/ic_launcher_background\"/>
-          <foreground android:drawable=\"@mipmap/ic_launcher_foreground\"/>
+            <background android:drawable=\"@color/ic_launcher_background\"/>
+            <foreground android:drawable=\"@mipmap/ic_launcher_foreground\"/>
         </adaptive-icon>" > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
 
         echo "<?xml version=\"1.0\" encoding=\"utf-8\"?>
         <resources>
-          <color name=\"ic_launcher_background\">#1976D2</color>
-          <color name=\"white\">#FFFFFF</color>
-          <color name=\"black\">#000000</color>
+            <color name=\"ic_launcher_background\">#1976D2</color>
+            <color name=\"white\">#FFFFFF</color>
+            <color name=\"black\">#000000</color>
         </resources>" > android/app/src/main/res/values/colors.xml
 
         echo "<?xml version=\"1.0\" encoding=\"utf-8\"?>
         <resources>
-          <style name=\"LaunchTheme\" parent=\"android:Theme.Material.Light.NoActionBar\">
-            <item name=\"android:windowBackground\">@color/white</item>
-          </style>
+            <style name=\"LaunchTheme\" parent=\"android:Theme.Material.Light.NoActionBar\">
+                <item name=\"android:windowBackground\">@color/white</item>
+            </style>
         </resources>" > android/app/src/main/res/values/styles.xml
 
-        echo "✅ Android icons + themes created."
+        echo "✅ Android icons & themes created."
 
-    # ✅ Step 7 - Firebase Config
-    - name: 🔐 Firebase Config
+    # 🔥 Step 7 – Firebase Config
+    - name: 🔥 Firebase Config
       run: |
         echo "{
           \"project_info\": {
@@ -96,22 +100,22 @@ jobs:
         }" > android/app/google-services.json
         echo "✅ Firebase Config added."
 
-    # ✅ Step 8 - Build APK
-    - name: 🚀 Build APK (Retry Safe)
+    # 🏗️ Step 8 – Build APK (Safe Retry)
+    - name: 🏗️ Build APK (Retry Safe)
       run: |
         flutter clean
         flutter pub get
-        flutter build apk --release || (flutter clean && flutter pub get && flutter build apk --release)
-        echo "🎯 Build completed successfully!"
+        flutter build apk --release --no-tree-shake-icons || (flutter clean && flutter pub get && flutter build apk --release)
+        echo "✅ Build completed successfully!"
 
-    # ✅ Step 9 - Upload Artifact
+    # 📤 Step 9 – Upload Artifact
     - name: 📤 Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: VisoraAI-Cloud-Release
         path: build/app/outputs/flutter-apk/app-release.apk
 
-    # ✅ Step 10 - Publish to GitHub Releases
+    # 🚀 Step 10 – Publish to GitHub Releases
     - name: 🚀 Publish to GitHub Releases
       if: startsWith(github.ref, 'refs/heads/main')
       uses: softprops/action-gh-release@v1
@@ -120,8 +124,9 @@ jobs:
         tag_name: v${{ github.run_number }}
         name: "Visora AI Cloud Build #${{ github.run_number }}"
         body: |
-          ☁️ Visora AI Cloud V8.2 Build Successful!
-          🔧 Gradle 8.x Safe
-          🎨 Icons + Themes Ready
-          🔐 Firebase Config Added
-          💙 Fully Cloud Compatible
+          🧠 Visora AI Cloud Build Successful!
+          ⚙️ Gradle 8.x + Kotlin 1.9.25
+          🧩 Pub Cache Fixed
+          🔥 Firebase Ready
+          🖼️ Auto Icons + Themes
+          ☁️ Fully Cloud Compatible
