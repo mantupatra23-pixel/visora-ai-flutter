@@ -106,6 +106,15 @@ EOF
 ENV GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.internal.http.socketTimeout=60000 -Dorg.gradle.internal.http.connectionTimeout=60000"
 RUN flutter build apk --debug --no-shrink
 
+# --- Use Gradle mirror + retry ---
+RUN mkdir -p /root/.gradle && echo "systemProp.gradle.internal.repository.max.retries=5" >> /root/.gradle/gradle.properties && \
+    echo "systemProp.gradle.internal.repository.retry.wait=5" >> /root/.gradle/gradle.properties && \
+    echo "systemProp.gradle.internal.http.socketTimeout=120000" >> /root/.gradle/gradle.properties && \
+    echo "systemProp.gradle.internal.http.connectionTimeout=120000" >> /root/.gradle/gradle.properties && \
+    echo "org.gradle.caching=true" >> /root/.gradle/gradle.properties && \
+    echo "org.gradle.daemon=false" >> /root/.gradle/gradle.properties && \
+    echo "org.gradle.parallel=true" >> /root/.gradle/gradle.properties
+
 # --- Build APK ---
 RUN flutter build apk --debug --no-shrink
 
