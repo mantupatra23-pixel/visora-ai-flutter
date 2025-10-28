@@ -114,25 +114,27 @@ RUN flutter pub get
 ENV GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.internal.http.socketTimeout=120000 -Dorg.gradle.internal.http.connectionTimeout=120000"
 RUN flutter doctor --android-licenses || true
 
-# --- Final Android SDK & Flutter path setup ---
+# --- Final Android SDK + Flutter Path Setup ---
 WORKDIR /app
 RUN mkdir -p /app/android && \
     echo "sdk.dir=/usr/lib/android-sdk" > /app/android/local.properties && \
     echo "flutter.sdk=/usr/local/flutter" >> /app/android/local.properties && \
     cat /app/android/local.properties
 
-# --- Ensure Gradle cache folder ---
+# --- Ensure Gradle folder (permission safe) ---
 RUN mkdir -p /home/builder/.gradle && \
-    echo "systemProp.gradle.internal.repository.max.retries=5" >> /home/builder/.gradle/gradle.properties && \
-    echo "systemProp.gradle.internal.repository.retry.wait=5" >> /home/builder/.gradle/gradle.properties && \
-    echo "systemProp.gradle.internal.http.socketTimeout=120000" >> /home/builder/.gradle/gradle.properties && \
-    echo "systemProp.gradle.internal.http.connectionTimeout=120000" >> /home/builder/.gradle/gradle.properties && \
-    echo "org.gradle.caching=true" >> /home/builder/.gradle/gradle.properties && \
     echo "org.gradle.daemon=false" >> /home/builder/.gradle/gradle.properties && \
-    echo "org.gradle.parallel=true" >> /home/builder/.gradle/gradle.properties
+    echo "org.gradle.parallel=true" >> /home/builder/.gradle/gradle.properties && \
+    echo "org.gradle.caching=true" >> /home/builder/.gradle/gradle.properties
 
-# --- Verify paths before build ---
-RUN echo "Current directory:" && pwd && echo "Listing android folder:" && ls -la android && echo "local.properties content:" && cat android/local.properties
+# --- Verify file paths ---
+RUN echo "Checking android folder contents:" && ls -la /app/android && \
+    echo "Showing local.properties content:" && cat /app/android/local.properties
+
+# --- Build APK in correct directory ---
+WORKDIR /app/android
+RUN flutter clean && flutter pub get && flutter build apk --debug --no-shrink
+WORKDIR /app
 
 # --- Build APK ---
 RUN flutter clean && flutter pub get && flutter build apk --debug --no-shrink
