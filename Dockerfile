@@ -114,40 +114,29 @@ RUN flutter pub get
 ENV GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.internal.http.socketTimeout=120000 -Dorg.gradle.internal.http.connectionTimeout=120000"
 RUN flutter doctor --android-licenses || true
 
-# --- Install Gradle in Cloud (with root access) ---
+# --- Auto-generate Gradle Wrapper in Cloud (Stable Version) ---
 USER root
-RUN apt-get update && apt-get install -y gradle
-RUN gradle -v || true
-USER builder
-
-# --- Verify Android SDK + Flutter Path ---
 WORKDIR /app/android
-RUN mkdir -p /app/android && \
-    echo "sdk.dir=/usr/lib/android-sdk" > /app/android/local.properties && \
-    echo "flutter.sdk=/usr/local/flutter" >> /app/android/local.properties && \
-    cat /app/android/local.properties
 
-# --- Gradle Config ---
-RUN mkdir -p /home/builder/.gradle && \
-    echo "org.gradle.daemon=false" >> /home/builder/.gradle/gradle.properties && \
-    echo "org.gradle.parallel=true" >> /home/builder/.gradle/gradle.properties && \
-    echo "org.gradle.caching=true" >> /home/builder/.gradle/gradle.properties
+# ensure build.gradle exists before wrapper
+RUN if [ -f "build.gradle" ]; then echo "Gradle file found ✅"; else echo "apply plugin: 'com.android.application'" > build.gradle; fi
 
-ENV GRADLE_USER_HOME=/home/builder/.gradle
+# recheck JAVA + SDK environment
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 ENV ANDROID_SDK_ROOT=/usr/lib/android-sdk
-ENV PATH="$PATH:/usr/lib/android-sdk/platform-tools:/usr/lib/android-sdk/cmdline-tools/latest/bin:/usr/lib/android-sdk/tools/bin"
+ENV PATH="$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools"
 
-# --- Auto-generate Gradle Wrapper in Cloud ---
+# now run wrapper safely
+RUN gradle wrapper --gradle-version 7.5.1 --distribution-type all || true
+
+# give execute permission
+RUN chmod +x gradlew || true
+
+USER builder
 WORKDIR /app/android
-RUN gradle wrapper
-
-# --- Verify gradlew exists ---
-RUN echo "=== Gradle Wrapper Files ===" && ls -la /app/android | grep gradlew || true
 
 # --- Build APK (cloud only) ---
-RUN flutter clean && flutter pub get && \
-    ./gradlew assembleDebug || flutter build apk --debug --no-shrink
+RUN flutter clean && flutter pub get && ./gradlew assembleDebug || flutter build apk --debug --no-shrink
 
 # --- Copy APK for Download ---
 WORKDIR /app
