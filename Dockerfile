@@ -114,9 +114,11 @@ RUN flutter pub get
 ENV GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.internal.http.socketTimeout=120000 -Dorg.gradle.internal.http.connectionTimeout=120000"
 RUN flutter doctor --android-licenses || true
 
-# --- Install Gradle in Cloud ---
+# --- Install Gradle in Cloud (with root access) ---
+USER root
 RUN apt-get update && apt-get install -y gradle
 RUN gradle -v || true
+USER builder
 
 # --- Verify Android SDK + Flutter Path ---
 WORKDIR /app/android
