@@ -42,8 +42,8 @@ USER builder
 WORKDIR /app
 RUN git config --global --add safe.directory /usr/local/flutter
 
-# ✅ Create a complete working build.gradle file
-RUN cat > android/app/build.gradle <<EOF
+# --- Fix Gradle + Flutter Build ---
+RUN cat > android/app/build.gradle <<'EOF'
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file('local.properties')
 if (localPropertiesFile.exists()) {
@@ -57,7 +57,7 @@ if (flutterRoot == null) {
 
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
-apply from: "\$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
+apply from: "${flutterRoot}/packages/flutter_tools/gradle/flutter.gradle"
 
 android {
     namespace "com.visora.ai"
@@ -77,8 +77,9 @@ android {
             debuggable true
         }
         release {
-            shrinkResources false
             minifyEnabled false
+            shrinkResources false
+            signingConfig signingConfigs.debug
         }
     }
 
@@ -95,7 +96,15 @@ android {
 flutter {
     source '../..'
 }
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:\$kotlin_version"
+}
 EOF
+
+# --- Gradle Download Retry + Build ---
+ENV GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.internal.http.socketTimeout=60000 -Dorg.gradle.internal.http.connectionTimeout=60000"
+RUN flutter build apk --debug --no-shrink
 
 # --- Build APK ---
 RUN flutter build apk --debug --no-shrink
