@@ -110,9 +110,10 @@ RUN rm -rf /app/.gradle /app/build /root/.gradle || true
 RUN flutter clean
 RUN flutter pub get
 
-# --- Gradle Download Retry + Build ---
-ENV GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.internal.http.socketTimeout=60000 -Dorg.gradle.internal.http.connectionTimeout=60000"
-RUN flutter build apk --debug --no-shrink
+# --- Gradle + Flutter Network Retry Setup ---
+ENV GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.internal.http.socketTimeout=120000 -Dorg.gradle.internal.http.connectionTimeout=120000"
+RUN flutter doctor --android-licenses || true
+RUN flutter pub get
 
 # --- Use Gradle mirror + retry ---
 RUN mkdir -p /root/.gradle && echo "systemProp.gradle.internal.repository.max.retries=5" >> /root/.gradle/gradle.properties && \
