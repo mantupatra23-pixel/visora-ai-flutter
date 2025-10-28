@@ -152,7 +152,11 @@ RUN chmod +x gradlew || true
 USER builder
 WORKDIR /app/android
 
-# --- Build APK (Cloud Only with Gradle Wrapper Path Fix) ---
+# --- Build APK (Cloud Only) ---
+USER root
+RUN chmod -R 777 /app/android /app/build /app/.gradle || true
+USER builder
+
 WORKDIR /app/android
 
 # if gradlew missing, re-generate wrapper
