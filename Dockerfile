@@ -118,8 +118,9 @@ RUN flutter doctor --android-licenses || true
 USER root
 WORKDIR /usr/local
 
-# Download and setup Gradle manually
-RUN wget https://services.gradle.org/distributions/gradle-7.5.1-bin.zip && \
+# Download and setup Gradle using curl instead of wget
+RUN apt-get update && apt-get install -y unzip curl && \
+    curl -L https://services.gradle.org/distributions/gradle-7.5.1-bin.zip -o gradle-7.5.1-bin.zip && \
     unzip gradle-7.5.1-bin.zip && \
     mv gradle-7.5.1 gradle && \
     rm gradle-7.5.1-bin.zip
