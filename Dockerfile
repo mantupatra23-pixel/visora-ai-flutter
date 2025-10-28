@@ -117,6 +117,10 @@ RUN flutter pub get
 RUN flutter doctor --android-licenses || true
 RUN flutter build apk --debug --no-shrink
 
+# --- Fix Android SDK path ---
+RUN echo "sdk.dir=/usr/lib/android-sdk" > android/local.properties
+RUN echo "flutter.sdk=/usr/local/flutter" >> android/local.properties
+
 # --- Use Gradle mirror + retry ---
 RUN mkdir -p /root/.gradle && echo "systemProp.gradle.internal.repository.max.retries=5" >> /root/.gradle/gradle.properties && \
     echo "systemProp.gradle.internal.repository.retry.wait=5" >> /root/.gradle/gradle.properties && \
