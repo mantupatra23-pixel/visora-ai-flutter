@@ -97,7 +97,7 @@ android {
 }
 
 flutter {
-    source = ../../
+    source = "/usr/local/flutter"
 }
 
 dependencies {
