@@ -39,7 +39,7 @@ USER builder
 WORKDIR /app
 RUN git config --global --add safe.directory /usr/local/flutter
 
-# ✅ Replace android/app/build.gradle completely with clean valid file
+# ✅ Create complete valid build.gradle file
 RUN cat > android/app/build.gradle <<'EOF'
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file('local.properties')
@@ -57,6 +57,7 @@ apply plugin: 'kotlin-android'
 apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
 android {
+    namespace "com.visora.ai"
     compileSdkVersion 34
 
     defaultConfig {
