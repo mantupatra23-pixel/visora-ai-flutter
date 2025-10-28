@@ -105,6 +105,11 @@ dependencies {
 }
 EOF
 
+# --- Clear Gradle cache and rebuild ---
+RUN rm -rf /app/.gradle /app/build /root/.gradle || true
+RUN flutter clean
+RUN flutter pub get
+
 # --- Gradle Download Retry + Build ---
 ENV GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.internal.http.socketTimeout=60000 -Dorg.gradle.internal.http.connectionTimeout=60000"
 RUN flutter build apk --debug --no-shrink
