@@ -121,26 +121,28 @@ RUN mkdir -p /app/android && \
     echo "flutter.sdk=/usr/local/flutter" >> /app/android/local.properties && \
     cat /app/android/local.properties
 
-# --- Ensure Gradle folder (permission safe) ---
+# --- Gradle Cache Folder (Permission Safe) ---
 RUN mkdir -p /home/builder/.gradle && \
     echo "org.gradle.daemon=false" >> /home/builder/.gradle/gradle.properties && \
     echo "org.gradle.parallel=true" >> /home/builder/.gradle/gradle.properties && \
     echo "org.gradle.caching=true" >> /home/builder/.gradle/gradle.properties
 
-# --- Verify file paths ---
+# --- Force Android Project Path for Gradle ---
+ENV ORG_GRADLE_PROJECT_projectDir=/app/android
+ENV GRADLE_USER_HOME=/home/builder/.gradle
+
+# --- Verify Everything Before Build ---
 RUN echo "=== VERIFY android/local.properties ===" && ls -la /app/android && \
     echo "File content:" && cat /app/android/local.properties && \
-    echo "=== Directory check done ==="
+    echo "Gradle Home: $GRADLE_USER_HOME" && pwd
 
-# --- Build APK (force path fix) ---
+# --- Build APK (absolute path enforced) ---
 WORKDIR /app/android
-RUN flutter clean && flutter pub get && cd /app/android && flutter build apk --debug --no-shrink
+RUN flutter clean && flutter pub get && flutter build apk --debug --no-shrink
 
-# --- Ensure output folder exists ---
-RUN mkdir -p /app/build/app/outputs/flutter-apk
-
-# --- Copy APK to root for download ---
-RUN cp /app/build/app/outputs/flutter-apk/app-debug.apk /app/app-debug.apk || true
+# --- Ensure output exists ---
+RUN mkdir -p /app/build/app/outputs/flutter-apk && \
+    cp /app/build/app/outputs/flutter-apk/app-debug.apk /app/app-debug.apk || true
 
 # --- Switch back to root and copy APK ---
 USER root
