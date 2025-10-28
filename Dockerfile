@@ -115,7 +115,7 @@ ENV GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.internal.http.socketTi
 RUN flutter doctor --android-licenses || true
 
 # --- Final Android SDK + Flutter Path Setup ---
-WORKDIR /app
+WORKDIR /app/android
 RUN mkdir -p /app/android && \
     echo "sdk.dir=/usr/lib/android-sdk" > /app/android/local.properties && \
     echo "flutter.sdk=/usr/local/flutter" >> /app/android/local.properties && \
@@ -128,16 +128,13 @@ RUN mkdir -p /home/builder/.gradle && \
     echo "org.gradle.caching=true" >> /home/builder/.gradle/gradle.properties
 
 # --- Verify file paths ---
-RUN echo "Checking android folder contents:" && ls -la /app/android && \
-    echo "Showing local.properties content:" && cat /app/android/local.properties
+RUN echo "=== VERIFY android/local.properties ===" && ls -la /app/android && \
+    echo "File content:" && cat /app/android/local.properties && \
+    echo "=== Directory check done ==="
 
-# --- Build APK in correct directory ---
+# --- Build APK (force path fix) ---
 WORKDIR /app/android
-RUN flutter clean && flutter pub get && flutter build apk --debug --no-shrink
-WORKDIR /app
-
-# --- Build APK ---
-RUN flutter clean && flutter pub get && flutter build apk --debug --no-shrink
+RUN flutter clean && flutter pub get && cd /app/android && flutter build apk --debug --no-shrink
 
 # --- Ensure output folder exists ---
 RUN mkdir -p /app/build/app/outputs/flutter-apk
