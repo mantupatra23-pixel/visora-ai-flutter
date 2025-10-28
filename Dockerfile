@@ -42,6 +42,9 @@ USER builder
 WORKDIR /app
 RUN git config --global --add safe.directory /usr/local/flutter
 
+# --- Fix missing local.properties path ---
+RUN echo "sdk.dir=/usr/lib/android-sdk" > android/local.properties
+
 # --- Fix Gradle + Flutter Build ---
 RUN cat > android/app/build.gradle <<'EOF'
 def localProperties = new Properties()
