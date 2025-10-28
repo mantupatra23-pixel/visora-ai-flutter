@@ -122,14 +122,14 @@ RUN echo "sdk.dir=/usr/lib/android-sdk" > local.properties && \
 WORKDIR /app
 
 # --- Use Gradle mirror + retry ---
-RUN mkdir -p /root/.gradle && \
-    echo "systemProp.gradle.internal.repository.max.retries=5" >> /root/.gradle/gradle.properties && \
-    echo "systemProp.gradle.internal.repository.retry.wait=5" >> /root/.gradle/gradle.properties && \
-    echo "systemProp.gradle.internal.http.socketTimeout=120000" >> /root/.gradle/gradle.properties && \
-    echo "systemProp.gradle.internal.http.connectionTimeout=120000" >> /root/.gradle/gradle.properties && \
-    echo "org.gradle.caching=true" >> /root/.gradle/gradle.properties && \
-    echo "org.gradle.daemon=false" >> /root/.gradle/gradle.properties && \
-    echo "org.gradle.parallel=true" >> /root/.gradle/gradle.properties
+RUN mkdir -p /home/builder/.gradle && \
+    echo "systemProp.gradle.internal.repository.max.retries=5" >> /home/builder/.gradle/gradle.properties && \
+    echo "systemProp.gradle.internal.repository.retry.wait=5" >> /home/builder/.gradle/gradle.properties && \
+    echo "systemProp.gradle.internal.http.socketTimeout=120000" >> /home/builder/.gradle/gradle.properties && \
+    echo "systemProp.gradle.internal.http.connectionTimeout=120000" >> /home/builder/.gradle/gradle.properties && \
+    echo "org.gradle.caching=true" >> /home/builder/.gradle/gradle.properties && \
+    echo "org.gradle.daemon=false" >> /home/builder/.gradle/gradle.properties && \
+    echo "org.gradle.parallel=true" >> /home/builder/.gradle/gradle.properties
 
 # --- Build APK ---
 RUN flutter build apk --debug --no-shrink
