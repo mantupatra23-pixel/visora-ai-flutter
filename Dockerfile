@@ -114,14 +114,14 @@ RUN flutter pub get
 ENV GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.internal.http.socketTimeout=120000 -Dorg.gradle.internal.http.connectionTimeout=120000"
 RUN flutter doctor --android-licenses || true
 
-# --- Final Android SDK path setup ---
-WORKDIR /app/android
-RUN echo "sdk.dir=/usr/lib/android-sdk" > local.properties && \
-    echo "flutter.sdk=/usr/local/flutter" >> local.properties && \
-    cat local.properties
+# --- Final Android SDK & Flutter path setup ---
 WORKDIR /app
+RUN mkdir -p /app/android && \
+    echo "sdk.dir=/usr/lib/android-sdk" > /app/android/local.properties && \
+    echo "flutter.sdk=/usr/local/flutter" >> /app/android/local.properties && \
+    cat /app/android/local.properties
 
-# --- Use Gradle mirror + retry ---
+# --- Ensure Gradle cache folder ---
 RUN mkdir -p /home/builder/.gradle && \
     echo "systemProp.gradle.internal.repository.max.retries=5" >> /home/builder/.gradle/gradle.properties && \
     echo "systemProp.gradle.internal.repository.retry.wait=5" >> /home/builder/.gradle/gradle.properties && \
@@ -131,8 +131,11 @@ RUN mkdir -p /home/builder/.gradle && \
     echo "org.gradle.daemon=false" >> /home/builder/.gradle/gradle.properties && \
     echo "org.gradle.parallel=true" >> /home/builder/.gradle/gradle.properties
 
+# --- Verify paths before build ---
+RUN echo "Current directory:" && pwd && echo "Listing android folder:" && ls -la android && echo "local.properties content:" && cat android/local.properties
+
 # --- Build APK ---
-RUN flutter build apk --debug --no-shrink
+RUN flutter clean && flutter pub get && flutter build apk --debug --no-shrink
 
 # --- Ensure output folder exists ---
 RUN mkdir -p /app/build/app/outputs/flutter-apk
