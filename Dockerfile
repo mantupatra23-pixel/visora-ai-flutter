@@ -39,8 +39,8 @@ USER builder
 WORKDIR /app
 RUN git config --global --add safe.directory /usr/local/flutter
 
-# ✅ Create complete valid build.gradle file
-RUN cat > android/app/build.gradle <<'EOF'
+# ✅ Create a complete working build.gradle file
+RUN cat > android/app/build.gradle <<EOF
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file('local.properties')
 if (localPropertiesFile.exists()) {
@@ -54,7 +54,7 @@ if (flutterRoot == null) {
 
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
-apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
+apply from: "\$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
 android {
     namespace "com.visora.ai"
@@ -84,7 +84,7 @@ EOF
 # --- Build APK ---
 RUN flutter build apk --debug --no-shrink
 
-# --- Switch back to root and copy APK to /app ---
+# --- Switch back to root and copy APK ---
 USER root
 RUN cp /app/build/app/outputs/flutter-apk/app-debug.apk /app/app-debug.apk || true
 
