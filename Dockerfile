@@ -2,6 +2,9 @@ FROM ubuntu:22.04
 WORKDIR /app
 
 # --- System setup ---
+RUN sed -i 's|http://archive.ubuntu.com|http://mirror.leaseweb.com|g' /etc/apt/sources.list && \
+    sed -i 's|http://security.ubuntu.com|http://mirror.leaseweb.com|g' /etc/apt/sources.list
+
 RUN apt-get update && apt-get install -y \
   git curl unzip xz-utils zip libglu1-mesa openjdk-17-jdk sudo
 
