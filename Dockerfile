@@ -121,28 +121,29 @@ RUN mkdir -p /app/android && \
     echo "flutter.sdk=/usr/local/flutter" >> /app/android/local.properties && \
     cat /app/android/local.properties
 
-# --- Gradle Configuration Safe Path ---
+# --- Gradle Config ---
 RUN mkdir -p /home/builder/.gradle && \
     echo "org.gradle.daemon=false" >> /home/builder/.gradle/gradle.properties && \
     echo "org.gradle.parallel=true" >> /home/builder/.gradle/gradle.properties && \
     echo "org.gradle.caching=true" >> /home/builder/.gradle/gradle.properties
 
-# --- Set Gradle Environment Variables ---
+# --- Environment Variables ---
 ENV GRADLE_USER_HOME=/home/builder/.gradle
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV ANDROID_SDK_ROOT=/usr/lib/android-sdk
+ENV PATH="$PATH:/usr/lib/android-sdk/platform-tools:/usr/lib/android-sdk/cmdline-tools/latest/bin:/usr/lib/android-sdk/tools/bin"
 
-# --- Verify ---
-RUN echo "=== VERIFY android/local.properties ===" && ls -la /app/android && \
-    echo "File content:" && cat /app/android/local.properties && \
+# --- Verify local.properties ---
+RUN echo "=== VERIFY android/local.properties ===" && cat /app/android/local.properties && \
     echo "Gradle Home: $GRADLE_USER_HOME" && pwd
 
-# --- Build APK from android/app directory (correct path) ---
-WORKDIR /app/android/app
-RUN flutter clean && flutter pub get && flutter build apk --debug --no-shrink
+# --- Build APK (Run from android/) ---
+WORKDIR /app/android
+RUN flutter clean && flutter pub get && ./gradlew assembleDebug
 
 # --- Copy APK for Download ---
 WORKDIR /app
 RUN mkdir -p /app/build/app/outputs/flutter-apk && \
-    cp /app/android/app/build/outputs/flutter-apk/app-debug.apk /app/app-debug.apk || true
+    cp /app/android/app/build/outputs/apk/debug/app-debug.apk /app/app-debug.apk || true
 
 CMD ["bash"]
