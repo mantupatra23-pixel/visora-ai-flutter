@@ -112,20 +112,18 @@ RUN flutter pub get
 
 # --- Network Optimization ---
 ENV GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.internal.http.socketTimeout=120000 -Dorg.gradle.internal.http.connectionTimeout=120000"
-RUN flutter clean
-RUN flutter pub get
 RUN flutter doctor --android-licenses || true
-RUN flutter build apk --debug --no-shrink
 
-# --- Fix Android SDK path before build ---
+# --- Final Android SDK path setup ---
+WORKDIR /app/android
+RUN echo "sdk.dir=/usr/lib/android-sdk" > local.properties && \
+    echo "flutter.sdk=/usr/local/flutter" >> local.properties && \
+    cat local.properties
 WORKDIR /app
-RUN mkdir -p android && \
-    echo "sdk.dir=/usr/lib/android-sdk" > /app/android/local.properties && \
-    echo "flutter.sdk=/usr/local/flutter" >> /app/android/local.properties && \
-    cat /app/android/local.properties
 
 # --- Use Gradle mirror + retry ---
-RUN mkdir -p /root/.gradle && echo "systemProp.gradle.internal.repository.max.retries=5" >> /root/.gradle/gradle.properties && \
+RUN mkdir -p /root/.gradle && \
+    echo "systemProp.gradle.internal.repository.max.retries=5" >> /root/.gradle/gradle.properties && \
     echo "systemProp.gradle.internal.repository.retry.wait=5" >> /root/.gradle/gradle.properties && \
     echo "systemProp.gradle.internal.http.socketTimeout=120000" >> /root/.gradle/gradle.properties && \
     echo "systemProp.gradle.internal.http.connectionTimeout=120000" >> /root/.gradle/gradle.properties && \
