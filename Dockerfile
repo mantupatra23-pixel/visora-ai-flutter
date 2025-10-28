@@ -152,18 +152,19 @@ RUN chmod +x gradlew || true
 USER builder
 WORKDIR /app/android
 
-# --- Build APK (Cloud Only) ---
+# --- Build APK (Cloud Only with Path Fix) ---
 USER root
 RUN chmod -R 777 /app/android /app/build /app/.gradle || true
 USER builder
 
-WORKDIR /app/android
+WORKDIR /app/android/app
 
 # if gradlew missing, re-generate wrapper
-RUN if [ ! -f "./gradlew" ]; then gradle wrapper --gradle-version 7.5.1 --distribution-type all; fi
-RUN chmod +x ./gradlew || true
+RUN if [ ! -f "../gradlew" ]; then cd .. && gradle wrapper --gradle-version 7.5.1 --distribution-type all; fi
+RUN chmod +x ../gradlew || true
 
-RUN flutter clean && flutter pub get && ./gradlew assembleDebug --no-daemon || flutter build apk --debug --no-shrink
+# Build the APK from correct app module
+RUN cd .. && flutter clean && flutter pub get && ./gradlew :app:assembleDebug --no-daemon || flutter build apk --debug --no-shrink
 
 # --- Copy APK for Download ---
 WORKDIR /app
