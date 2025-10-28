@@ -114,6 +114,10 @@ RUN flutter pub get
 ENV GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.internal.http.socketTimeout=120000 -Dorg.gradle.internal.http.connectionTimeout=120000"
 RUN flutter doctor --android-licenses || true
 
+# --- Install Gradle in Cloud ---
+RUN apt-get update && apt-get install -y gradle
+RUN gradle -v || true
+
 # --- Verify Android SDK + Flutter Path ---
 WORKDIR /app/android
 RUN mkdir -p /app/android && \
@@ -134,9 +138,7 @@ ENV PATH="$PATH:/usr/lib/android-sdk/platform-tools:/usr/lib/android-sdk/cmdline
 
 # --- Auto-generate Gradle Wrapper in Cloud ---
 WORKDIR /app/android
-RUN yes | sdkmanager --licenses && \
-    chmod +x gradlew || true && \
-    gradle wrapper || true
+RUN gradle wrapper
 
 # --- Verify gradlew exists ---
 RUN echo "=== Gradle Wrapper Files ===" && ls -la /app/android | grep gradlew || true
