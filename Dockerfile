@@ -129,6 +129,12 @@ RUN mkdir -p /root/.gradle && echo "systemProp.gradle.internal.repository.max.re
 # --- Build APK ---
 RUN flutter build apk --debug --no-shrink
 
+# --- Ensure output folder exists ---
+RUN mkdir -p /app/build/app/outputs/flutter-apk
+
+# --- Copy APK to root for download ---
+RUN cp /app/build/app/outputs/flutter-apk/app-debug.apk /app/app-debug.apk || true
+
 # --- Switch back to root and copy APK ---
 USER root
 RUN cp /app/build/app/outputs/flutter-apk/app-debug.apk /app/app-debug.apk || true
