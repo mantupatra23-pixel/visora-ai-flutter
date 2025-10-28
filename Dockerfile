@@ -114,6 +114,22 @@ RUN flutter pub get
 ENV GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.internal.http.socketTimeout=120000 -Dorg.gradle.internal.http.connectionTimeout=120000"
 RUN flutter doctor --android-licenses || true
 
+# --- Install Gradle manually in Cloud (Stable Method) ---
+USER root
+WORKDIR /usr/local
+
+# Download and setup Gradle manually
+RUN wget https://services.gradle.org/distributions/gradle-7.5.1-bin.zip && \
+    unzip gradle-7.5.1-bin.zip && \
+    mv gradle-7.5.1 gradle && \
+    rm gradle-7.5.1-bin.zip
+
+# Add Gradle to PATH
+ENV GRADLE_HOME=/usr/local/gradle
+ENV PATH=$GRADLE_HOME/bin:$PATH
+
+RUN gradle -v || true
+
 # --- Auto-generate Gradle Wrapper in Cloud (Stable Version) ---
 USER root
 WORKDIR /app/android
