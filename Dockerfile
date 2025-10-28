@@ -114,7 +114,7 @@ RUN flutter pub get
 ENV GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.internal.http.socketTimeout=120000 -Dorg.gradle.internal.http.connectionTimeout=120000"
 RUN flutter doctor --android-licenses || true
 
-# --- Final Android SDK + Flutter Path Setup ---
+# --- Verify Android SDK + Flutter Path ---
 WORKDIR /app/android
 RUN mkdir -p /app/android && \
     echo "sdk.dir=/usr/lib/android-sdk" > /app/android/local.properties && \
@@ -127,19 +127,23 @@ RUN mkdir -p /home/builder/.gradle && \
     echo "org.gradle.parallel=true" >> /home/builder/.gradle/gradle.properties && \
     echo "org.gradle.caching=true" >> /home/builder/.gradle/gradle.properties
 
-# --- Environment Variables ---
 ENV GRADLE_USER_HOME=/home/builder/.gradle
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 ENV ANDROID_SDK_ROOT=/usr/lib/android-sdk
 ENV PATH="$PATH:/usr/lib/android-sdk/platform-tools:/usr/lib/android-sdk/cmdline-tools/latest/bin:/usr/lib/android-sdk/tools/bin"
 
-# --- Verify local.properties ---
-RUN echo "=== VERIFY android/local.properties ===" && cat /app/android/local.properties && \
-    echo "Gradle Home: $GRADLE_USER_HOME" && pwd
-
-# --- Build APK (Run from android/) ---
+# --- Auto-generate Gradle Wrapper in Cloud ---
 WORKDIR /app/android
-RUN flutter clean && flutter pub get && ./gradlew assembleDebug
+RUN yes | sdkmanager --licenses && \
+    chmod +x gradlew || true && \
+    gradle wrapper || true
+
+# --- Verify gradlew exists ---
+RUN echo "=== Gradle Wrapper Files ===" && ls -la /app/android | grep gradlew || true
+
+# --- Build APK (cloud only) ---
+RUN flutter clean && flutter pub get && \
+    ./gradlew assembleDebug || flutter build apk --debug --no-shrink
 
 # --- Copy APK for Download ---
 WORKDIR /app
